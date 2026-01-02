@@ -30,6 +30,8 @@
 		"vite": "^7.2.4"
 	},
 	"dependencies": {
+		"fft.js": "^4.0.4",
+		"pitchfinder": "^2.3.4",
 		"wavesurfer.js": "^7.12.1"
 	}
 }

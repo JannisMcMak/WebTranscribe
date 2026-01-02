@@ -1,8 +1,4 @@
-export type PitchFrame = {
-	time: number;
-	freq: number | null;
-	confidence: number;
-};
+import type { PitchFrame } from './types';
 
 export const audioState = $state({
 	blob: null as Blob | null,
