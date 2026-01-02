@@ -5,8 +5,11 @@
 	import BeatsOverlay from '@/lib/ui/BeatsOverlay.svelte';
 	import { analysisState, audioState } from '@/lib/stores.svelte';
 	import createAnalysisWorker from '@/lib/workers';
+	import { initWasm } from '@/lib/wasm';
 
-	onMount(() => {
+	onMount(async () => {
+		await initWasm();
+
 		fetch('/test.mp3')
 			.then((response) => response.blob())
 			.then(async (blob) => {
