@@ -1,8 +1,8 @@
 class AudioEngine {
 	// ----- Web Audio -----
 	private ctx: AudioContext;
-	private source: AudioBufferSourceNode | null = null;
-	private gain: AudioNode;
+	private sourceNode: AudioBufferSourceNode | null = null;
+	private gainNode: GainNode;
 
 	// ----- Audio state -----
 	/** Currently loaded audio file. */
@@ -20,11 +20,16 @@ class AudioEngine {
 	private startTime = $state(0);
 	/** Time in seconds where to start playback. */
 	private offset = $state(0);
-	/** Playback speed. */
-	private playbackRate = $state(1);
 
+	// ----- Controls state -----
+	/** Playback speed. */
+	playbackRate = $state(1);
+	/** Volume (number betwee 0 and 2. Default 1). */
+	volume = $state(1);
+
+	// ----- Other -----
 	/** Wether to ignore the AudioBufferSourceNode `ended` event (used when seeking). */
-	suppressEnded = false;
+	private suppressEnded = false;
 
 	// ---- Derived values -----
 	/** Duration in seconds of the current audio. */
@@ -43,7 +48,17 @@ class AudioEngine {
 
 	constructor() {
 		this.ctx = new AudioContext();
-		this.gain = this.ctx.createGain();
+		this.gainNode = this.ctx.createGain();
+
+		$effect.root(() => {
+			$effect(() => {
+				this.gainNode.gain.value = this.volume;
+			});
+
+			return () => {
+				console.warn('Root effect cleanup');
+			};
+		});
 	}
 
 	get blob() {
@@ -78,7 +93,7 @@ class AudioEngine {
 		if (!this.buffer) return null;
 		const source = this.ctx.createBufferSource();
 		source.buffer = this.buffer;
-		source.connect(this.gain).connect(this.ctx.destination);
+		source.connect(this.gainNode).connect(this.ctx.destination);
 		source.onended = () => {
 			if (this.isPlaying && !this.suppressEnded) {
 				this.stop();
@@ -101,11 +116,11 @@ class AudioEngine {
 			this.ctx.resume();
 		}
 
-		this.source = this.createSource();
-		if (!this.source) return;
+		this.sourceNode = this.createSource();
+		if (!this.sourceNode) return;
 
 		this.startTime = this.ctx.currentTime;
-		this.source.start(0, this.offset);
+		this.sourceNode.start(0, this.offset);
 
 		this.isPlaying = true;
 		this.startClock();
@@ -115,15 +130,15 @@ class AudioEngine {
 		if (!this.isPlaying) return;
 
 		this.offset = this.playbackPosition;
-		this.source?.stop();
+		this.sourceNode?.stop();
 
-		this.source = null;
+		this.sourceNode = null;
 		this.isPlaying = false;
 	}
 
 	stop(): void {
-		this.source?.stop();
-		this.source = null;
+		this.sourceNode?.stop();
+		this.sourceNode = null;
 
 		this.offset = 0;
 		this.isPlaying = false;
