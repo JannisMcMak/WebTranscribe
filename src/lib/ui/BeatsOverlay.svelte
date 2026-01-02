@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { analysisState, audioState } from '@/lib/stores.svelte';
+	import { analysisState } from '@/lib/stores.svelte';
+	import audioEngine from '../engine/engine.svelte';
 
 	let canvas: HTMLCanvasElement;
 
@@ -11,7 +12,7 @@
 		// Draw beats
 		ctx.fillStyle = '#f00';
 		for (const beat of analysisState.beats) {
-			const x = beat * (canvas.width / audioState.duration);
+			const x = beat * (canvas.width / audioEngine.duration);
 			ctx.fillRect(x, 0, 1, canvas.height);
 		}
 	});
