@@ -1,4 +1,5 @@
 <script lang="ts">
+	import './app.css';
 	import { onMount } from 'svelte';
 	import Waveform from '$lib/ui/Waveform.svelte';
 	import PitchPanel from '$lib/ui/PitchPanel.svelte';
@@ -8,6 +9,8 @@
 	import createAnalysisWorker from '$lib/workers';
 	import { initWasm } from '$lib/wasm';
 	import audioEngine from '$lib/engine/engine.svelte';
+	import * as Tooltip from '$lib/components/ui/tooltip';
+	import { ModeWatcher } from 'mode-watcher';
 
 	onMount(async () => {
 		await initWasm();
@@ -29,13 +32,11 @@
 				// 	}
 				// });
 				// console.log('Created audio worker');
-
 				// while (!audioState.buffer) {
 				// 	// Wait for the audio buffer to be loaded
 				// 	await new Promise((resolve) => setTimeout(resolve, 100));
 				// }
 				// console.log('Registered audio buffer');
-
 				// // Do analysis
 				// audioWorker.post({
 				// 	type: 'pitch',
@@ -51,10 +52,10 @@
 	});
 </script>
 
-<ControlsPanel />
-<Waveform>
-	<BeatsOverlay />
-</Waveform>
-<PitchPanel />
-
-<button onclick={() => audioEngine.clearAudio()}>remove</button>
+<ModeWatcher />
+<Tooltip.Provider>
+	<ControlsPanel />
+	<Waveform><BeatsOverlay /></Waveform>
+	<PitchPanel />
+	<button onclick={() => audioEngine.clearAudio()}>remove</button>
+</Tooltip.Provider>

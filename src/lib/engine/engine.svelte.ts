@@ -134,6 +134,10 @@ class AudioEngine {
 		return source;
 	}
 
+	get playing() {
+		return this.isPlaying;
+	}
+
 	togglePlay(): void {
 		if (this.isPlaying) this.pause();
 		else this.play();
