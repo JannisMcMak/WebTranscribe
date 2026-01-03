@@ -221,6 +221,13 @@ class AudioEngine {
 		// Counteract pitch distortion that comes from setting the sourceNode playbackRate.
 		this.pitchshiftNode?.setPitch(1 / newRate);
 	}
+
+	volumeUp() {
+		this.volume = Math.min(2, this.volume + 0.1);
+	}
+	volumeDown() {
+		this.volume = Math.max(0, this.volume - 0.1);
+	}
 }
 const audioEngine = new AudioEngine();
 export default audioEngine;

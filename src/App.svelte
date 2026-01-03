@@ -11,6 +11,7 @@
 	import audioEngine from '$lib/engine/engine.svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { ModeWatcher } from 'mode-watcher';
+	import KeyboardShortcuts from '$lib/ui/KeyboardShortcuts.svelte';
 
 	onMount(async () => {
 		await initWasm();
@@ -52,9 +53,10 @@
 	});
 </script>
 
-<main class="h-screen w-screen bg-accent">
-	<ModeWatcher />
-	<Tooltip.Provider>
+<ModeWatcher />
+<KeyboardShortcuts />
+<Tooltip.Provider>
+	<main class="h-screen w-screen bg-accent">
 		<ControlsPanel />
 
 		<div class="h-sm m-8">
@@ -62,5 +64,5 @@
 		</div>
 
 		<PitchPanel />
-	</Tooltip.Provider>
-</main>
+	</main>
+</Tooltip.Provider>
