@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { analysisState } from '@/lib/stores.svelte';
+	import { analysisState } from '$lib/stores.svelte';
 	import audioEngine from '../engine/engine.svelte';
 
 	let canvas: HTMLCanvasElement;

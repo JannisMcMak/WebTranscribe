@@ -1,5 +1,5 @@
 import PitchFinder from 'pitchfinder';
-import type { PitchFrame } from '@/lib/types';
+import type { PitchFrame } from '$lib/types';
 
 export default function extractPitch(
 	data: Float32Array,

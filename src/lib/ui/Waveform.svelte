@@ -2,7 +2,7 @@
 	import WaveSurfer from 'wavesurfer.js';
 	import Timeline from 'wavesurfer.js/dist/plugins/timeline.js';
 	import { onMount, onDestroy, type Snippet } from 'svelte';
-	import audioEngine from '@/lib/engine/engine.svelte';
+	import audioEngine from '$lib/engine/engine.svelte';
 
 	interface Props {
 		children?: Snippet;

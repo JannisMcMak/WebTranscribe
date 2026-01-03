@@ -1,5 +1,5 @@
 <script lang="ts">
-	import audioEngine from '@/lib/engine/engine.svelte';
+	import audioEngine from '$lib/engine/engine.svelte';
 
 	const playbackRateOptions = [0.25, 0.5, 0.75, 1, 1.25];
 </script>

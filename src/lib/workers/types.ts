@@ -1,4 +1,4 @@
-import type { PitchFrame } from '@/lib/types';
+import type { PitchFrame } from '$lib/types';
 
 export type WorkerRequest =
 	| {

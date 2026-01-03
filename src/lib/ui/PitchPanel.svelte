@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { analysisState } from '@/lib/stores.svelte';
-	import type { PitchFrame } from '@/lib/types';
+	import { analysisState } from '$lib/stores.svelte';
+	import type { PitchFrame } from '$lib/types';
 
 	type MidiNote = {
 		note: number;

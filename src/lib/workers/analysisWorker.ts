@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
-import extractPitch from '@/lib/audio/pitch';
-import extractOnset from '@/lib/audio/onset';
+import extractPitch from '$lib/audio/pitch';
+import extractOnset from '$lib/audio/onset';
 import type { WorkerRequest, WorkerResponse } from './types';
 
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {

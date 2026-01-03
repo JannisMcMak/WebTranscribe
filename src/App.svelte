@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Waveform from '@/lib/ui/Waveform.svelte';
-	import PitchPanel from '@/lib/ui/PitchPanel.svelte';
-	import BeatsOverlay from '@/lib/ui/BeatsOverlay.svelte';
-	import ControlsPanel from '@/lib/ui/ControlsPanel.svelte';
-	import { analysisState } from '@/lib/stores.svelte';
-	import createAnalysisWorker from '@/lib/workers';
-	import { initWasm } from '@/lib/wasm';
-	import audioEngine from '@/lib/engine/engine.svelte';
+	import Waveform from '$lib/ui/Waveform.svelte';
+	import PitchPanel from '$lib/ui/PitchPanel.svelte';
+	import BeatsOverlay from '$lib/ui/BeatsOverlay.svelte';
+	import ControlsPanel from '$lib/ui/ControlsPanel.svelte';
+	import { analysisState } from '$lib/stores.svelte';
+	import createAnalysisWorker from '$lib/workers';
+	import { initWasm } from '$lib/wasm';
+	import audioEngine from '$lib/engine/engine.svelte';
 
 	onMount(async () => {
 		await initWasm();
