@@ -35,11 +35,14 @@
 
 		// Sync the audio engine playback loop to the WaveSurfer time
 		$effect(() => {
-			ws.setTime(audioEngine.playbackPosition);
+			// WaveSurfer needs the actual position in the original audio buffer (Buffer Time)
+			ws.setTime(audioEngine.bufferPosition);
 		});
 
-		ws.on('interaction', (t) => {
-			audioEngine.seekTo(t);
+		ws.on('interaction', (audioBufferTime) => {
+			// Convert from audio buffer time to playback time
+			const playbackTime = audioBufferTime / audioEngine.playbackSpeed;
+			audioEngine.seekTo(playbackTime);
 		});
 	});
 

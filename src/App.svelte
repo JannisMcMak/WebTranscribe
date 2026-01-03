@@ -7,7 +7,7 @@
 	import { analysisState } from '@/lib/stores.svelte';
 	import createAnalysisWorker from '@/lib/workers';
 	import { initWasm } from '@/lib/wasm';
-	import audioEngine from './lib/engine/engine.svelte';
+	import audioEngine from '@/lib/engine/engine.svelte';
 
 	onMount(async () => {
 		await initWasm();

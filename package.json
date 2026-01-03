@@ -6,10 +6,12 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "vite build",
+		"build:wasm": "cd rust && wasm-pack build --target web",
 		"preview": "vite preview",
 		"check": "svelte-check --tsconfig ./tsconfig.json",
 		"format": "prettier --write .",
-		"lint": "prettier --check . && eslint ."
+		"lint": "prettier --check . && eslint .",
+		"postinstall": "cp node_modules/rubberband-web/public/rubberband-processor.js public/"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.4.0",
@@ -32,6 +34,7 @@
 	"dependencies": {
 		"fft.js": "^4.0.4",
 		"pitchfinder": "^2.3.4",
+		"rubberband-web": "^0.2.1",
 		"wavesurfer.js": "^7.12.1"
 	}
 }

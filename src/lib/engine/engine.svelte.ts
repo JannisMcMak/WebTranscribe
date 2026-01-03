@@ -1,8 +1,33 @@
+import getPitchshiftNode from './pitchshift';
+
+/**
+ * Audio Engine for playing audio files based on the Web Audio API.
+ *
+ * BUFFER TIME vs PLAYBACK TIME
+ *
+ * Buffer Time: Position in the original audio file (seconds of audio data consumed).
+ * Playback Time: Time experienced by the user (real-world elapsed seconds).
+ *
+ * Relationship: `bufferTime = playbackTime × playbackRate`
+ *
+ * Examples:
+ * - At playbackRate 1.0 (normal speed):
+ *   10 seconds playback time = 10 seconds buffer time
+ *
+ * - At playbackRate 2.0 (double speed):
+ *   10 seconds playback time = 20 seconds buffer time
+ *   (Playing twice as fast, so we consume 20 seconds of audio in 10 real seconds)
+ *
+ * - At playbackRate 0.5 (half speed):
+ *   10 seconds playback time = 5 seconds buffer time
+ *   (Playing half as fast, so we only consume 5 seconds of audio in 10 real seconds)
+ */
 class AudioEngine {
 	// ----- Web Audio -----
 	private ctx: AudioContext;
 	private sourceNode: AudioBufferSourceNode | null = null;
 	private gainNode: GainNode;
+	private pitchshiftNode: Awaited<ReturnType<typeof getPitchshiftNode>> | null = null;
 
 	// ----- Audio state -----
 	/** Currently loaded audio file. */
@@ -16,15 +41,15 @@ class AudioEngine {
 
 	// ----- Playback state -----
 	private isPlaying = $state(false);
-	/** Time in seconds when playback started. */
+	/** Time in seconds when playback started (Playback Time). */
 	private startTime = $state(0);
-	/** Time in seconds where to start playback. */
+	/** Time in seconds where to start playback (Playback Time). */
 	private offset = $state(0);
 
 	// ----- Controls state -----
 	/** Playback speed. */
-	playbackRate = $state(1);
-	/** Volume (number betwee 0 and 2. Default 1). */
+	private playbackRate = $state(1);
+	/** Volume (number between 0 and 2. Default 1). */
 	volume = $state(1);
 
 	// ----- Other -----
@@ -32,23 +57,28 @@ class AudioEngine {
 	private suppressEnded = false;
 
 	// ---- Derived values -----
-	/** Duration in seconds of the current audio. */
-	duration = $derived(this.buffer ? this.buffer.duration : 0);
-	/** Current playback position in seconds. */
-	playbackPosition = $derived.by(() => {
-		if (!this.buffer) return 0;
+	/** Duration in seconds of the original audio (Buffer Time). */
+	bufferDuration = $derived(this.buffer ? this.buffer.duration : 0);
+	/** Duration in seconds of the processed audio (Playback Time). */
+	duration = $derived(this.bufferDuration / this.playbackRate);
+	/** Current position in seconds (Buffer Time). */
+	bufferPosition = $derived.by(() => {
+		const bufferOffset = this.offset * this.playbackRate;
 		if (this.isPlaying) {
-			return Math.min(
-				(this.offset + (this.now - this.startTime)) * this.playbackRate,
-				this.duration
-			);
+			const elapsed = (this.now - this.startTime) * this.playbackRate;
+			return Math.min(bufferOffset + elapsed, this.bufferDuration);
 		}
-		return this.offset;
+		return bufferOffset;
 	});
+	/** Current position in seconds (Playback Time). */
+	playbackPosition = $derived.by(() => this.bufferPosition / this.playbackRate);
 
 	constructor() {
 		this.ctx = new AudioContext();
 		this.gainNode = this.ctx.createGain();
+		getPitchshiftNode(this.ctx).then((node) => {
+			this.pitchshiftNode = node;
+		});
 
 		$effect.root(() => {
 			$effect(() => {
@@ -81,7 +111,7 @@ class AudioEngine {
 	private startClock(): void {
 		const loop = () => {
 			this.now = this.ctx.currentTime;
-			this.startClock();
+			this.rafID = requestAnimationFrame(loop);
 		};
 		this.rafID = requestAnimationFrame(loop);
 	}
@@ -90,10 +120,11 @@ class AudioEngine {
 	}
 
 	private createSource(): AudioBufferSourceNode | null {
-		if (!this.buffer) return null;
+		if (!this.buffer || !this.pitchshiftNode) return null;
 		const source = this.ctx.createBufferSource();
 		source.buffer = this.buffer;
-		source.connect(this.gainNode).connect(this.ctx.destination);
+		source.playbackRate.value = this.playbackRate;
+		source.connect(this.pitchshiftNode).connect(this.gainNode).connect(this.ctx.destination);
 		source.onended = () => {
 			if (this.isPlaying && !this.suppressEnded) {
 				this.stop();
@@ -120,7 +151,7 @@ class AudioEngine {
 		if (!this.sourceNode) return;
 
 		this.startTime = this.ctx.currentTime;
-		this.sourceNode.start(0, this.offset);
+		this.sourceNode.start(0, this.offset * this.playbackRate);
 
 		this.isPlaying = true;
 		this.startClock();
@@ -148,9 +179,9 @@ class AudioEngine {
 	seekTo(time: number): void {
 		if (!this.buffer) return;
 		const wasPlaying = this.isPlaying;
-		this.suppressEnded = true;
 
 		if (wasPlaying) {
+			this.suppressEnded = true;
 			this.stop();
 		}
 
@@ -161,8 +192,30 @@ class AudioEngine {
 		// If currently playing, restart source at new offset
 		if (wasPlaying) {
 			this.play();
-			this.play();
 		}
+	}
+
+	get playbackSpeed() {
+		return this.playbackRate;
+	}
+	setPlaybackSpeed(newRate: number): void {
+		const wasPlaying = this.isPlaying;
+
+		// Keep track of original position in buffer time, before playbackRate is updated.
+		const bufferPosition = this.bufferPosition;
+
+		if (wasPlaying) {
+			this.suppressEnded = true;
+			this.stop();
+		}
+
+		// Set new playbackRate and start source at new offset
+		this.playbackRate = newRate;
+		this.offset = bufferPosition / newRate;
+		if (wasPlaying) this.play();
+
+		// Counteract pitch distortion that comes from setting the sourceNode playbackRate.
+		this.pitchshiftNode?.setPitch(1 / newRate);
 	}
 }
 const audioEngine = new AudioEngine();

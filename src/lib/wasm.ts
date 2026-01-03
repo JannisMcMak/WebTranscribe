@@ -4,4 +4,4 @@ export async function initWasm() {
 	await init();
 }
 
-export { timestretch } from '../../rust/pkg/audio';
+export { foo } from '../../rust/pkg/audio';
