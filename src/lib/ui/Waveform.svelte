@@ -15,10 +15,12 @@
 	onMount(() => {
 		ws = WaveSurfer.create({
 			container,
-			height: 120,
-			waveColor: '#999 ',
-			progressColor: '#0a5685',
-			cursorColor: '#8c4fff',
+			height: 240,
+			waveColor: getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground'),
+			progressColor: getComputedStyle(document.documentElement).getPropertyValue(
+				'--accent-foreground'
+			),
+			cursorColor: getComputedStyle(document.documentElement).getPropertyValue('--destructive'),
 			normalize: true,
 			plugins: [Timeline.create({ container: '#timeline' })],
 			dragToSeek: true
@@ -49,7 +51,7 @@
 	onDestroy(() => ws?.destroy());
 </script>
 
-<div bind:this={container} style="position: relative;">
+<div bind:this={container} class="relative">
 	{#if children}
 		{@render children()}
 	{/if}

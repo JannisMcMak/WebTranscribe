@@ -52,10 +52,15 @@
 	});
 </script>
 
-<ModeWatcher />
-<Tooltip.Provider>
-	<ControlsPanel />
-	<Waveform><BeatsOverlay /></Waveform>
-	<PitchPanel />
-	<button onclick={() => audioEngine.clearAudio()}>remove</button>
-</Tooltip.Provider>
+<main class="h-screen w-screen bg-accent">
+	<ModeWatcher />
+	<Tooltip.Provider>
+		<ControlsPanel />
+
+		<div class="h-sm m-8">
+			<Waveform><BeatsOverlay /></Waveform>
+		</div>
+
+		<PitchPanel />
+	</Tooltip.Provider>
+</main>
