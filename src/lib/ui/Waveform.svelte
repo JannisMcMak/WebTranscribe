@@ -2,9 +2,11 @@
 	import WaveSurfer from 'wavesurfer.js';
 	import Timeline from 'wavesurfer.js/dist/plugins/timeline.js';
 	import Hover from 'wavesurfer.js/dist/plugins/hover.js';
+	import Zoom from 'wavesurfer.js/dist/plugins/zoom.js';
 	import { onMount, onDestroy, type Snippet } from 'svelte';
 	import audioEngine from '$lib/engine/engine.svelte';
-	import { userInput } from '$lib/stores.svelte';
+	import { waveformState } from '$lib/stores.svelte';
+	import { formatTime } from '$lib/utils';
 
 	interface Props {
 		children?: Snippet;
@@ -16,6 +18,12 @@
 
 	onMount(() => {
 		const hoverPlugin = Hover.create({ labelSize: 0 });
+		const zoomPlugin = Zoom.create();
+		const timelinePlugin = Timeline.create({
+			insertPosition: 'beforebegin',
+			primaryLabelSpacing: 5,
+			formatTimeCallback: (s) => formatTime(s, true)
+		});
 		ws = WaveSurfer.create({
 			container,
 			height: 240,
@@ -24,10 +32,22 @@
 				'--accent-foreground'
 			),
 			cursorColor: getComputedStyle(document.documentElement).getPropertyValue('--destructive'),
-			normalize: true,
-			plugins: [Timeline.create({ container: '#timeline' }), hoverPlugin],
+			plugins: [hoverPlugin, zoomPlugin, timelinePlugin],
 			dragToSeek: true
 		});
+
+		// Register global actions
+		waveformState.centerToPlayhead = () => {
+			// Size of the visible area / size of the total waveform (in px)
+			const zoom = ws.getWidth() / ws.getWrapper().scrollWidth;
+			if (zoom === 1) return; // Return early if the waveform is fully zoomed out
+			// Number of seconds that are visible
+			const visibleTime = ws.getDuration() * zoom;
+			ws.setScrollTime(ws.getCurrentTime() - visibleTime / 2);
+		};
+		waveformState.resetZoom = () => {
+			console.warn('TODO');
+		};
 
 		// Load audio into WaveSurfer every time the blob in the audio engine changes
 		$effect(() => {
@@ -44,24 +64,24 @@
 			ws.setTime(audioEngine.bufferPosition);
 		});
 
+		// Seek on click / drag
 		ws.on('interaction', (audioBufferTime) => {
 			// Convert from audio buffer time to playback time
 			const playbackTime = audioBufferTime / audioEngine.playbackSpeed;
 			audioEngine.seekTo(playbackTime);
 		});
 
-		// Keep track of the position of the mouse over the waveform
+		// Keep track of wavesurfer state
 		hoverPlugin.on(
 			'hover',
-			(relX) => (userInput.hoverPosition = relX * audioEngine.bufferDuration)
+			(relX) => (waveformState.hoverPosition = relX * audioEngine.bufferDuration)
 		);
-		container.addEventListener('mouseleave', () => (userInput.hoverPosition = 0));
+		container.addEventListener('mouseleave', () => (waveformState.hoverPosition = 0));
 	});
 
 	onDestroy(() => ws?.destroy());
 </script>
 
-<div id="timeline"></div>
 <div bind:this={container} class="relative">
 	{#if children}
 		{@render children()}

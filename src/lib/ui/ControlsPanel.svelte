@@ -11,7 +11,7 @@
 	import ThemeButton from '$lib/components/ThemeButton.svelte';
 	import { formatTime } from '$lib/utils';
 	import { Slider } from '$lib/components/ui/slider';
-	import { userInput } from '$lib/stores.svelte';
+	import { waveformState } from '$lib/stores.svelte';
 	import { Kbd, KbdGroup } from '$lib/components/ui/kbd';
 </script>
 
@@ -23,7 +23,7 @@
 				{formatTime(audioEngine.bufferPosition)}
 			</div>
 			<div class="flex flex-col text-sm text-muted-foreground">
-				<span>{formatTime(userInput.hoverPosition)}</span>
+				<span>{formatTime(waveformState.hoverPosition)}</span>
 				<span>{formatTime(audioEngine.bufferDuration)}</span>
 			</div>
 		</Card.Root>
@@ -134,7 +134,7 @@
 			<div class="flex space-x-2">
 				<Tooltip.Root>
 					<Tooltip.Trigger>
-						<Button variant="outline" size="icon">
+						<Button variant="outline" size="icon" onclick={() => waveformState.centerToPlayhead()}>
 							<UnfoldHorizontal />
 						</Button>
 					</Tooltip.Trigger>
@@ -142,7 +142,7 @@
 				</Tooltip.Root>
 				<Tooltip.Root>
 					<Tooltip.Trigger>
-						<Button variant="outline" size="icon">
+						<Button variant="outline" size="icon" onclick={() => waveformState.resetZoom()}>
 							<ScanSearch />
 						</Button>
 					</Tooltip.Trigger>
