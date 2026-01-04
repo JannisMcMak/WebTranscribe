@@ -82,8 +82,18 @@
 	onDestroy(() => ws?.destroy());
 </script>
 
-<div bind:this={container} class="relative">
+<div id="waveform" bind:this={container} class="relative">
 	{#if children}
 		{@render children()}
 	{/if}
 </div>
+
+<style>
+	:global(#waveform ::part(cursor):after) {
+		color: var(--color-destructive);
+		font-size: 18px;
+		content: '▼';
+		position: absolute;
+		translate: -7.5px -10px;
+	}
+</style>
