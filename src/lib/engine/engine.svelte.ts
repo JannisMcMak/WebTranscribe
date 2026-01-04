@@ -127,7 +127,7 @@ class AudioEngine {
 		source.connect(this.pitchshiftNode).connect(this.gainNode).connect(this.ctx.destination);
 		source.onended = () => {
 			if (this.isPlaying && !this.suppressEnded) {
-				this.stop();
+				this.pause(); // Pause at the end of the buffer instead of stopping
 			}
 			this.suppressEnded = false;
 		};
@@ -199,6 +199,10 @@ class AudioEngine {
 		}
 	}
 
+	seekBy(delta: number): void {
+		this.seekTo(this.playbackPosition + delta);
+	}
+
 	get playbackSpeed() {
 		return this.playbackRate;
 	}
@@ -227,6 +231,10 @@ class AudioEngine {
 	}
 	volumeDown() {
 		this.volume = Math.max(0, this.volume - 0.1);
+	}
+	volumeMute() {
+		if (this.volume > 0) this.volume = 0;
+		else this.volume = 1;
 	}
 }
 const audioEngine = new AudioEngine();
