@@ -1,4 +1,8 @@
+import Parameter from './parameter';
 import getPitchshiftNode from './pitchshift';
+
+export const playbackRateParam = new Parameter({ defaultValue: 1, min: 0.2, max: 1.5, step: 0.1 });
+export const volumeParam = new Parameter({ defaultValue: 1, min: 0, max: 2, step: 0.1 });
 
 /**
  * Audio Engine for playing audio files based on the Web Audio API.
@@ -91,22 +95,24 @@ class AudioEngine {
 		});
 	}
 
+	// Audio file
+
 	get blob() {
 		return this.audioBlob;
 	}
-
 	clearAudio(): void {
 		this.stop();
 		this.audioBlob = null;
 		this.buffer = null;
 	}
-
 	async loadAudio(blob: Blob): Promise<void> {
 		this.audioBlob = blob;
 		const arrayBuffer = await blob.arrayBuffer();
 		this.buffer = await this.ctx.decodeAudioData(arrayBuffer);
 		this.stop();
 	}
+
+	// Helpers
 
 	private startClock(): void {
 		const loop = () => {
@@ -134,15 +140,15 @@ class AudioEngine {
 		return source;
 	}
 
+	// Playback
+
 	get playing() {
 		return this.isPlaying;
 	}
-
 	togglePlay(): void {
 		if (this.isPlaying) this.pause();
 		else this.play();
 	}
-
 	play(): void {
 		if (this.isPlaying || !this.buffer) return;
 
@@ -160,7 +166,6 @@ class AudioEngine {
 		this.isPlaying = true;
 		this.startClock();
 	}
-
 	pause(): void {
 		if (!this.isPlaying) return;
 
@@ -170,7 +175,6 @@ class AudioEngine {
 		this.sourceNode = null;
 		this.isPlaying = false;
 	}
-
 	stop(): void {
 		this.sourceNode?.stop();
 		this.sourceNode = null;
@@ -179,6 +183,8 @@ class AudioEngine {
 		this.isPlaying = false;
 		this.stopClock();
 	}
+
+	// Seeking
 
 	seekTo(time: number): void {
 		if (!this.buffer) return;
@@ -198,10 +204,11 @@ class AudioEngine {
 			this.play();
 		}
 	}
-
 	seekBy(delta: number): void {
 		this.seekTo(this.playbackPosition + delta);
 	}
+
+	// Playback speed
 
 	get playbackSpeed() {
 		return this.playbackRate;
@@ -226,17 +233,19 @@ class AudioEngine {
 		this.pitchshiftNode?.setPitch(1 / newRate);
 	}
 	playbackSpeedUp() {
-		this.setPlaybackSpeed(Math.min(2, this.playbackRate + 0.1));
+		this.setPlaybackSpeed(playbackRateParam.increment(this.playbackRate));
 	}
 	playbackSpeedDown() {
-		this.setPlaybackSpeed(Math.max(0.25, this.playbackRate - 0.1));
+		this.setPlaybackSpeed(playbackRateParam.decrement(this.playbackRate));
 	}
 
+	// Volume
+
 	volumeUp() {
-		this.volume = Math.min(2, this.volume + 0.1);
+		this.volume = volumeParam.increment(this.volume);
 	}
 	volumeDown() {
-		this.volume = Math.max(0, this.volume - 0.1);
+		this.volume = volumeParam.decrement(this.volume);
 	}
 	volumeMute() {
 		if (this.volume > 0) this.volume = 0;

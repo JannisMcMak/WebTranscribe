@@ -7,7 +7,7 @@
 	import ScanSearch from '@lucide/svelte/icons/scan-search';
 	import UnfoldHorizontal from '@lucide/svelte/icons/unfold-horizontal';
 	import { Button } from '$lib/components/ui/button';
-	import audioEngine from '$lib/engine/engine.svelte';
+	import audioEngine, { playbackRateParam, volumeParam } from '$lib/engine/engine.svelte';
 	import ThemeButton from '$lib/components/ThemeButton.svelte';
 	import { formatTime } from '$lib/utils';
 	import { Slider } from '$lib/components/ui/slider';
@@ -78,10 +78,8 @@
 							class="mb-1 min-w-48"
 							value={audioEngine.playbackSpeed}
 							onValueCommit={(x) => audioEngine.setPlaybackSpeed(x)}
-							min={0.25}
-							max={1.5}
-							step={0.01}
 							valueFormatter={(value) => `${value.toFixed(2)}x`}
+							{...playbackRateParam.sliderAttributes}
 						/>
 					</Tooltip.Trigger>
 					<Tooltip.Content side="bottom">
@@ -116,10 +114,8 @@
 						type="single"
 						class="mb-1 min-w-48 "
 						bind:value={audioEngine.volume}
-						min={0}
-						max={2}
-						step={0.01}
 						valueFormatter={(value) => `${Math.round(value * 100)}%`}
+						{...volumeParam.sliderAttributes}
 					/>
 				</Tooltip.Trigger>
 				<Tooltip.Content side="bottom">
