@@ -1,8 +1,10 @@
 <script lang="ts">
 	import WaveSurfer from 'wavesurfer.js';
 	import Timeline from 'wavesurfer.js/dist/plugins/timeline.js';
+	import Hover from 'wavesurfer.js/dist/plugins/hover.js';
 	import { onMount, onDestroy, type Snippet } from 'svelte';
 	import audioEngine from '$lib/engine/engine.svelte';
+	import { userInput } from '$lib/stores.svelte';
 
 	interface Props {
 		children?: Snippet;
@@ -13,6 +15,7 @@
 	let ws: WaveSurfer;
 
 	onMount(() => {
+		const hoverPlugin = Hover.create({ labelSize: 0 });
 		ws = WaveSurfer.create({
 			container,
 			height: 240,
@@ -22,7 +25,7 @@
 			),
 			cursorColor: getComputedStyle(document.documentElement).getPropertyValue('--destructive'),
 			normalize: true,
-			plugins: [Timeline.create({ container: '#timeline' })],
+			plugins: [Timeline.create({ container: '#timeline' }), hoverPlugin],
 			dragToSeek: true
 		});
 
@@ -46,14 +49,21 @@
 			const playbackTime = audioBufferTime / audioEngine.playbackSpeed;
 			audioEngine.seekTo(playbackTime);
 		});
+
+		// Keep track of the position of the mouse over the waveform
+		hoverPlugin.on(
+			'hover',
+			(relX) => (userInput.hoverPosition = relX * audioEngine.bufferDuration)
+		);
+		container.addEventListener('mouseleave', () => (userInput.hoverPosition = 0));
 	});
 
 	onDestroy(() => ws?.destroy());
 </script>
 
+<div id="timeline"></div>
 <div bind:this={container} class="relative">
 	{#if children}
 		{@render children()}
 	{/if}
 </div>
-<div id="timeline"></div>

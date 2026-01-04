@@ -1,76 +1,164 @@
 <script lang="ts">
 	import * as Tooltip from '$lib/components/ui/tooltip';
-	import * as ButtonGroup from '$lib/components/ui/button-group';
 	import * as Card from '$lib/components/ui/card';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import SquareIcon from '@lucide/svelte/icons/square';
+	import RepeatIcon from '@lucide/svelte/icons/repeat';
+	import ScanSearch from '@lucide/svelte/icons/scan-search';
+	import UnfoldHorizontal from '@lucide/svelte/icons/unfold-horizontal';
 	import { Button } from '$lib/components/ui/button';
 	import audioEngine from '$lib/engine/engine.svelte';
 	import ThemeButton from '$lib/components/ThemeButton.svelte';
-	import { cn } from '$lib/utils';
+	import { formatTime } from '$lib/utils';
 	import { Slider } from '$lib/components/ui/slider';
-
-	const playbackRateOptions = [0.25, 0.5, 0.75, 1, 1.25];
+	import { userInput } from '$lib/stores.svelte';
+	import { Kbd, KbdGroup } from '$lib/components/ui/kbd';
 </script>
 
-<Card.Root class="h-auto w-full gap-0">
-	<Card.Header class="grid-cols-[auto_1fr] gap-x-6">
-		<Card.Title>WebTranscribe</Card.Title>
-		<Card.Description class="text-right">
-			Web utility for transcribing music.
-			<Button
-				variant="link"
-				size="sm"
-				class="text-sm text-muted-foreground!"
-				href="https://github.com/JannisMcMak/WebTranscribe"
-				target="_blank"
-			>
-				View on GitHub
-			</Button>
-		</Card.Description>
-	</Card.Header>
+<Card.Root class="h-auto w-full p-4">
+	<Card.Content class="flex w-full space-x-12 p-0">
+		<!-- Timing panel -->
+		<Card.Root class="flex-row items-center gap-4 p-3 font-mono">
+			<div class="text-3xl font-bold">
+				{formatTime(audioEngine.bufferPosition)}
+			</div>
+			<div class="flex flex-col text-sm text-muted-foreground">
+				<span>{formatTime(userInput.hoverPosition)}</span>
+				<span>{formatTime(audioEngine.bufferDuration)}</span>
+			</div>
+		</Card.Root>
 
-	<Card.Content class="flex w-full items-center space-x-8">
-		<Tooltip.Root>
-			<Tooltip.Trigger>
-				<ButtonGroup.Root>
-					<PlayButton isPlaying={audioEngine.playing} onClick={() => audioEngine.togglePlay()} />
+		<!-- Playback controls -->
+		<div class="flex flex-col justify-between">
+			<div class="text-sm font-bold">Playback Controls</div>
+			<div class="flex space-x-2">
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						<PlayButton isPlaying={audioEngine.playing} onClick={() => audioEngine.togglePlay()} />
+					</Tooltip.Trigger>
+					<Tooltip.Content side="bottom">
+						{audioEngine.playing ? 'Pause' : 'Play'}
+						<KbdGroup>
+							<Kbd>Space</Kbd>/
+							<Kbd>K</Kbd>
+						</KbdGroup>
+					</Tooltip.Content>
+				</Tooltip.Root>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						<Button variant="outline" size="icon" onclick={() => audioEngine.stop()}>
+							<SquareIcon />
+						</Button>
+					</Tooltip.Trigger>
+					<Tooltip.Content side="bottom">Stop <Kbd>Esc</Kbd></Tooltip.Content>
+				</Tooltip.Root>
 
-					<Button variant="outline" size="icon" onclick={() => audioEngine.stop()}>
-						<SquareIcon />
-					</Button>
-				</ButtonGroup.Root>
-			</Tooltip.Trigger>
-			<Tooltip.Content>Play/Stop</Tooltip.Content>
-		</Tooltip.Root>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						<Button variant="outline" size="icon">
+							<RepeatIcon />
+						</Button>
+					</Tooltip.Trigger>
+					<Tooltip.Content side="bottom">
+						Toggle Loop
+						<Kbd>T</Kbd>
+					</Tooltip.Content>
+				</Tooltip.Root>
+			</div>
+		</div>
 
-		<ButtonGroup.Root>
-			{#each playbackRateOptions as rate}
-				{@const isActive = audioEngine.playbackSpeed === rate}
-				<Button
-					variant={isActive ? 'default' : 'outline'}
-					class={cn('text-sm', isActive ? 'pointer-events-none' : '')}
-					onclick={() => audioEngine.setPlaybackSpeed(rate)}
-				>
-					{rate * 100}%
-				</Button>
-			{/each}
-		</ButtonGroup.Root>
+		<!-- Playback speed -->
+		<div class="flex flex-col justify-between">
+			<div class="text-sm font-bold">Playback Speed</div>
+			<div class="flex items-end">
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						<Slider
+							type="single"
+							class="mb-1 min-w-48"
+							value={audioEngine.playbackSpeed}
+							onValueCommit={(x) => audioEngine.setPlaybackSpeed(x)}
+							min={0.25}
+							max={1.5}
+							step={0.01}
+							valueFormatter={(value) => `${value.toFixed(2)}x`}
+						/>
+					</Tooltip.Trigger>
+					<Tooltip.Content side="bottom">
+						Playback speed
+						<KbdGroup>
+							<Kbd>Shift</Kbd>+<Kbd>&uparrow;</Kbd>
+							/
+							<Kbd>Shift</Kbd>+<Kbd>&downarrow;</Kbd>
+						</KbdGroup>
+					</Tooltip.Content>
+				</Tooltip.Root>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						<Button size="sm" variant="ghost" onclick={() => audioEngine.setPlaybackSpeed(1)}>
+							Reset
+						</Button>
+					</Tooltip.Trigger>
+					<Tooltip.Content side="bottom">
+						Reset playback speed
+						<Kbd>R</Kbd>
+					</Tooltip.Content>
+				</Tooltip.Root>
+			</div>
+		</div>
 
-		<Slider
-			type="single"
-			bind:value={audioEngine.volume}
-			min={0}
-			max={2}
-			step={0.01}
-			class="max-w-40"
-		/>
+		<!-- Volume -->
+		<div class="flex flex-col justify-between">
+			<div class="text-sm font-bold">Volume</div>
+			<Tooltip.Root>
+				<Tooltip.Trigger>
+					<Slider
+						type="single"
+						class="mb-1 min-w-48 "
+						bind:value={audioEngine.volume}
+						min={0}
+						max={2}
+						step={0.01}
+						valueFormatter={(value) => `${Math.round(value * 100)}%`}
+					/>
+				</Tooltip.Trigger>
+				<Tooltip.Content side="bottom">
+					Volume
+					<KbdGroup>
+						<Kbd>&uparrow;</Kbd>/
+						<Kbd>&downarrow;</Kbd>
+					</KbdGroup>
+				</Tooltip.Content>
+			</Tooltip.Root>
+		</div>
 
-		<Tooltip.Root>
-			<Tooltip.Trigger>
-				<ThemeButton />
-			</Tooltip.Trigger>
-			<Tooltip.Content>Toggle theme</Tooltip.Content>
-		</Tooltip.Root>
+		<!-- View -->
+		<div class="flex flex-col justify-between">
+			<div class="text-sm font-bold">View</div>
+			<div class="flex space-x-2">
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						<Button variant="outline" size="icon">
+							<UnfoldHorizontal />
+						</Button>
+					</Tooltip.Trigger>
+					<Tooltip.Content side="bottom">Center to Playhead</Tooltip.Content>
+				</Tooltip.Root>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						<Button variant="outline" size="icon">
+							<ScanSearch />
+						</Button>
+					</Tooltip.Trigger>
+					<Tooltip.Content side="bottom">Reset Zoom</Tooltip.Content>
+				</Tooltip.Root>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						<ThemeButton />
+					</Tooltip.Trigger>
+					<Tooltip.Content side="bottom">Toggle theme</Tooltip.Content>
+				</Tooltip.Root>
+			</div>
+		</div>
 	</Card.Content>
 </Card.Root>

@@ -225,6 +225,12 @@ class AudioEngine {
 		// Counteract pitch distortion that comes from setting the sourceNode playbackRate.
 		this.pitchshiftNode?.setPitch(1 / newRate);
 	}
+	playbackSpeedUp() {
+		this.setPlaybackSpeed(Math.min(2, this.playbackRate + 0.1));
+	}
+	playbackSpeedDown() {
+		this.setPlaybackSpeed(Math.max(0.25, this.playbackRate - 0.1));
+	}
 
 	volumeUp() {
 		this.volume = Math.min(2, this.volume + 0.1);

@@ -12,6 +12,7 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { ModeWatcher } from 'mode-watcher';
 	import KeyboardShortcuts from '$lib/ui/KeyboardShortcuts.svelte';
+	import Footer from '$lib/ui/Footer.svelte';
 
 	onMount(async () => {
 		await initWasm();
@@ -55,8 +56,8 @@
 
 <ModeWatcher />
 <KeyboardShortcuts />
-<Tooltip.Provider>
-	<main class="h-screen w-screen bg-accent">
+<Tooltip.Provider delayDuration={400}>
+	<main class="flex h-screen w-screen flex-col justify-between bg-accent">
 		<ControlsPanel />
 
 		<div class="h-sm m-8">
@@ -64,5 +65,7 @@
 		</div>
 
 		<PitchPanel />
+
+		<Footer />
 	</main>
 </Tooltip.Provider>

@@ -1,9 +1,11 @@
 <script lang="ts">
 	import audioEngine from '$lib/engine/engine.svelte';
 
+	const supportedModifiers = ['Shift', 'Control'] as const;
 	interface Shortcut {
 		/** the {@link https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent | KeyboardEvent}.key to listen to */
 		key: string | string[];
+		modifiers?: (typeof supportedModifiers)[number][];
 		callback?: (e: KeyboardEvent) => void;
 	}
 
@@ -16,6 +18,8 @@
 			key: 'Escape',
 			callback: () => audioEngine.stop()
 		},
+
+		// Volume
 		{
 			key: 'ArrowUp',
 			callback: () => audioEngine.volumeUp()
@@ -28,6 +32,24 @@
 			key: 'KeyM',
 			callback: () => audioEngine.volumeMute()
 		},
+
+		// Playback speed
+		{
+			key: 'ArrowUp',
+			modifiers: ['Shift'],
+			callback: () => audioEngine.playbackSpeedUp()
+		},
+		{
+			key: 'ArrowDown',
+			modifiers: ['Shift'],
+			callback: () => audioEngine.playbackSpeedDown()
+		},
+		{
+			key: 'KeyR',
+			callback: () => audioEngine.setPlaybackSpeed(1)
+		},
+
+		// Seeking
 		{
 			key: 'ArrowRight',
 			callback: () => audioEngine.seekBy(3)
@@ -63,10 +85,21 @@
 	];
 
 	function handle(e: KeyboardEvent) {
-		const shortcut = shortcuts.find((s) =>
-			Array.isArray(s.key) ? s.key.includes(e.code) : s.key === e.code
-		);
-		if (shortcut) shortcut.callback?.(e);
+		const shortcut = shortcuts.find((s) => {
+			// Check for key
+			const keyPressed = Array.isArray(s.key) ? s.key.includes(e.code) : s.key === e.code;
+			if (!keyPressed) return false;
+
+			// Check that the pressed modifiers match the required modifiers exactly
+			const modifierMask = supportedModifiers.map(
+				(m) => e.getModifierState(m) === (s.modifiers || []).includes(m)
+			);
+			return modifierMask.every(Boolean);
+		});
+		if (shortcut) {
+			e.preventDefault();
+			shortcut.callback?.(e);
+		}
 	}
 </script>
 

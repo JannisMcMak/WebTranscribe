@@ -5,3 +5,7 @@ export const analysisState = $state({
 	beats: <number[]>[],
 	bpm: <number | null>null
 });
+
+export const userInput = $state({
+	hoverPosition: 0
+});
