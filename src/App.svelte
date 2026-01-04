@@ -7,7 +7,7 @@
 	import ControlsPanel from '$lib/ui/ControlsPanel.svelte';
 	import { analysisState } from '$lib/stores.svelte';
 	import createAnalysisWorker from '$lib/workers';
-	import { initWasm } from '$lib/wasm';
+	import { initWasm, foo } from '$lib/wasm';
 	import audioEngine from '$lib/engine/engine.svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { ModeWatcher } from 'mode-watcher';
@@ -16,6 +16,8 @@
 
 	onMount(async () => {
 		await initWasm();
+		const fooResult = foo(new Float32Array([1, 2, 3]));
+		if (fooResult === 3) console.log('WASM works');
 
 		fetch('/test.mp3')
 			.then((response) => response.blob())
