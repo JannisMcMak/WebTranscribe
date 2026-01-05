@@ -1,10 +1,11 @@
 <script lang="ts">
 	import audioEngine from '$lib/engine/engine.svelte';
 
-	const supportedModifiers = ['Shift', 'Control'] as const;
+	const supportedModifiers = ['Shift', 'Control', 'Meta'] as const;
 	interface Shortcut {
-		/** the {@link https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent | KeyboardEvent}.key to listen to */
+		/** The {@link https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent | KeyboardEvent}.key to listen to */
 		key: string | string[];
+		/** The modifers that need to be pressed. See{@link https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/getModifierState#modifier_keys_on_firefox} */
 		modifiers?: (typeof supportedModifiers)[number][];
 		callback?: (e: KeyboardEvent) => void;
 	}
