@@ -13,46 +13,42 @@
 	import { ModeWatcher } from 'mode-watcher';
 	import KeyboardShortcuts from '$lib/ui/KeyboardShortcuts.svelte';
 	import Footer from '$lib/ui/Footer.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import Upload from '@lucide/svelte/icons/upload';
 
 	onMount(async () => {
 		await initWasm();
 		const fooResult = foo(new Float32Array([1, 2, 3]));
 		if (fooResult === 3) console.log('WASM works');
 
-		fetch('/test.mp3')
-			.then((response) => response.blob())
-			.then(async (blob) => {
-				audioEngine.loadAudio(blob);
-
-				// const audioWorker = createAnalysisWorker();
-				// audioWorker.onMessage((msg) => {
-				// 	switch (msg.type) {
-				// 		case 'pitch':
-				// 			analysisState.pitchTrack = msg.data;
-				// 			break;
-				// 		case 'onset':
-				// 			analysisState.beats = msg.data;
-				// 			break;
-				// 	}
-				// });
-				// console.log('Created audio worker');
-				// while (!audioState.buffer) {
-				// 	// Wait for the audio buffer to be loaded
-				// 	await new Promise((resolve) => setTimeout(resolve, 100));
-				// }
-				// console.log('Registered audio buffer');
-				// // Do analysis
-				// audioWorker.post({
-				// 	type: 'pitch',
-				// 	buffer: audioState.buffer.getChannelData(0),
-				// 	sampleRate: audioState.sampleRate
-				// });
-				// audioWorker.post({
-				// 	type: 'onset',
-				// 	buffer: audioState.buffer.getChannelData(0),
-				// 	sampleRate: audioState.sampleRate
-				// });
-			});
+		// const audioWorker = createAnalysisWorker();
+		// audioWorker.onMessage((msg) => {
+		// 	switch (msg.type) {
+		// 		case 'pitch':
+		// 			analysisState.pitchTrack = msg.data;
+		// 			break;
+		// 		case 'onset':
+		// 			analysisState.beats = msg.data;
+		// 			break;
+		// 	}
+		// });
+		// console.log('Created audio worker');
+		// while (!audioState.buffer) {
+		// 	// Wait for the audio buffer to be loaded
+		// 	await new Promise((resolve) => setTimeout(resolve, 100));
+		// }
+		// console.log('Registered audio buffer');
+		// // Do analysis
+		// audioWorker.post({
+		// 	type: 'pitch',
+		// 	buffer: audioState.buffer.getChannelData(0),
+		// 	sampleRate: audioState.sampleRate
+		// });
+		// audioWorker.post({
+		// 	type: 'onset',
+		// 	buffer: audioState.buffer.getChannelData(0),
+		// 	sampleRate: audioState.sampleRate
+		// });
 	});
 </script>
 
@@ -62,9 +58,28 @@
 	<main class="flex h-screen w-screen flex-col justify-between bg-accent">
 		<ControlsPanel />
 
-		<div class="h-sm m-8">
-			<Waveform><BeatsOverlay /></Waveform>
-		</div>
+		{#if audioEngine.blob}
+			<div class="m-8">
+				<Waveform><BeatsOverlay /></Waveform>
+			</div>
+		{:else}
+			<div class="flex h-full w-full flex-col items-center justify-center space-y-2">
+				<div class="font-bold text-muted-foreground">No audio loaded</div>
+				<Button>
+					<Upload />
+					Upload File
+				</Button>
+				<Button
+					size="sm"
+					variant="ghost"
+					onclick={() => {
+						fetch('/sample.mp3')
+							.then((response) => response.blob())
+							.then((blob) => audioEngine.loadAudio(blob));
+					}}>Load Sample</Button
+				>
+			</div>
+		{/if}
 
 		<PitchPanel />
 

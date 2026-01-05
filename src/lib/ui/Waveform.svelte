@@ -21,7 +21,6 @@
 		const zoomPlugin = Zoom.create();
 		const timelinePlugin = Timeline.create({
 			insertPosition: 'beforebegin',
-			primaryLabelSpacing: 5,
 			formatTimeCallback: (s) => formatTime(s, true)
 		});
 		ws = WaveSurfer.create({
