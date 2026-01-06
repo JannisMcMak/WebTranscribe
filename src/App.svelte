@@ -15,6 +15,8 @@
 	import Footer from '$lib/ui/Footer.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import Upload from '@lucide/svelte/icons/upload';
+	import { innerHeight } from 'svelte/reactivity/window';
+	import VolumeMeter from '$lib/ui/VolumeMeter.svelte';
 
 	onMount(async () => {
 		await initWasm();
@@ -50,16 +52,26 @@
 		// 	sampleRate: audioState.sampleRate
 		// });
 	});
+
+	let controlsPanel = $state<HTMLDivElement | null>(null);
+	let footer = $state<HTMLDivElement | null>(null);
 </script>
 
 <ModeWatcher />
 <KeyboardShortcuts />
 <Tooltip.Provider delayDuration={400}>
-	<main class="flex h-screen w-screen flex-col justify-between bg-accent">
-		<ControlsPanel />
+	<main class="relative flex h-screen w-screen flex-col justify-between bg-accent">
+		<ControlsPanel bind:ref={controlsPanel} />
 
 		{#if audioEngine.blob}
-			<div class="m-8">
+			<div style={`top: ${controlsPanel?.clientHeight || 0}px;`} class="absolute left-0">
+				<VolumeMeter
+					h={(innerHeight.current || 0) -
+						(controlsPanel?.clientHeight || 0) -
+						(footer?.clientHeight || 0)}
+				/>
+			</div>
+			<div class="m-12">
 				<Waveform><BeatsOverlay /></Waveform>
 			</div>
 		{:else}
@@ -83,6 +95,6 @@
 
 		<PitchPanel />
 
-		<Footer />
+		<Footer bind:ref={footer} />
 	</main>
 </Tooltip.Provider>

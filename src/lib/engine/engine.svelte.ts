@@ -33,6 +33,9 @@ class AudioEngine {
 	private gainNode: GainNode;
 	private pitchshiftNode: Awaited<ReturnType<typeof getPitchshiftNode>> | null = null;
 
+	private analyser: AnalyserNode;
+	private analyserData: Float32Array;
+
 	// ----- Audio state -----
 	/** Currently loaded audio file. */
 	private audioBlob = $state<Blob | null>(null);
@@ -84,6 +87,10 @@ class AudioEngine {
 			this.pitchshiftNode = node;
 		});
 
+		this.analyser = this.ctx.createAnalyser();
+		this.analyser.fftSize = 2048;
+		this.analyserData = new Float32Array(this.analyser.fftSize);
+
 		$effect.root(() => {
 			$effect(() => {
 				this.gainNode.gain.value = this.volume;
@@ -134,7 +141,11 @@ class AudioEngine {
 		const source = this.ctx.createBufferSource();
 		source.buffer = this.buffer;
 		source.playbackRate.value = this.playbackRate;
-		source.connect(this.pitchshiftNode).connect(this.gainNode).connect(this.ctx.destination);
+		source
+			.connect(this.pitchshiftNode)
+			.connect(this.gainNode)
+			.connect(this.analyser)
+			.connect(this.ctx.destination);
 		source.onended = () => {
 			if (this.isPlaying && !this.suppressEnded) {
 				this.pause(); // Pause at the end of the buffer instead of stopping
@@ -142,6 +153,21 @@ class AudioEngine {
 			this.suppressEnded = false;
 		};
 		return source;
+	}
+
+	// Audio analysis
+
+	getPeak(): number {
+		if (!this.isPlaying) return 0;
+
+		this.analyser.getFloatTimeDomainData(this.analyserData);
+		let peak = 0;
+		for (let i = 0; i < this.analyserData.length; i++) {
+			const v = Math.abs(this.analyserData[i]);
+			if (v > peak) peak = v;
+		}
+
+		return peak;
 	}
 
 	// Playback

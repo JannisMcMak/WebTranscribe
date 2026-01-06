@@ -13,9 +13,15 @@
 	import { Slider } from '$lib/components/ui/slider';
 	import { waveformState } from '$lib/stores.svelte';
 	import { Kbd, KbdGroup } from '$lib/components/ui/kbd';
+
+	let {
+		ref = $bindable(null)
+	}: {
+		ref?: HTMLDivElement | null;
+	} = $props();
 </script>
 
-<Card.Root class="h-auto w-full p-4">
+<Card.Root class="h-auto w-full p-4" bind:ref>
 	<Card.Content class="flex w-full space-x-12 p-0">
 		<!-- Timing panel -->
 		<Card.Root class="flex-row items-center gap-4 p-3 font-mono">
