@@ -33,8 +33,8 @@ class AudioEngine {
 	private gainNode: GainNode;
 	private pitchshiftNode: Awaited<ReturnType<typeof getPitchshiftNode>> | null = null;
 
-	private analyser: AnalyserNode;
-	private analyserData: Float32Array;
+	private analyzer: AnalyserNode;
+	private analyzerData: Float32Array;
 
 	// ----- Audio state -----
 	/** Currently loaded audio file. */
@@ -75,9 +75,10 @@ class AudioEngine {
 	);
 
 	// ----- Other -----
+	/** Wether the audio is currently loading. */
 	isLoading = $state(false);
 
-	/** Wether to ignore the AudioBufferSourceNode `ended` event (used when seeking). */
+	/** Wether to ignore the next {@link AudioBufferSourceNode.onended} event. */
 	private suppressEnded = false;
 
 	// ---- Derived values -----
@@ -113,9 +114,9 @@ class AudioEngine {
 			this.pitchshiftNode = node;
 		});
 
-		this.analyser = this.ctx.createAnalyser();
-		this.analyser.fftSize = 2048;
-		this.analyserData = new Float32Array(this.analyser.fftSize);
+		this.analyzer = this.ctx.createAnalyser();
+		this.analyzer.fftSize = 2048;
+		this.analyzerData = new Float32Array(this.analyzer.fftSize);
 
 		$effect.root(() => {
 			$effect(() => {
@@ -133,11 +134,13 @@ class AudioEngine {
 	get blob() {
 		return this.audioBlob;
 	}
+	/** Clears the currently loaded audio file. */
 	clearAudio(): void {
 		this.stop();
 		this.audioBlob = null;
 		this.buffer = null;
 	}
+	/** Load a new audio file. */
 	async loadAudio(blob: Blob): Promise<void> {
 		this.isLoading = true;
 		this.audioBlob = blob;
@@ -164,6 +167,13 @@ class AudioEngine {
 		cancelAnimationFrame(this.rafID!);
 	}
 
+	/**
+	 * Create an {@link AudioBufferSourceNode} and connect it appropriately.
+	 * Also sets the sourceNode playbackRate to the current playbackRate.
+	 *
+	 * Audio Pipeline:
+	 *  AudioBufferSourceNode -> Pitchshift (Rubberband) -> Gain -> Analyzer -> Destination
+	 */
 	private createSource(): AudioBufferSourceNode | null {
 		if (!this.buffer || !this.pitchshiftNode) return null;
 		const source = this.ctx.createBufferSource();
@@ -172,11 +182,12 @@ class AudioEngine {
 		source
 			.connect(this.pitchshiftNode)
 			.connect(this.gainNode)
-			.connect(this.analyser)
+			.connect(this.analyzer)
 			.connect(this.ctx.destination);
 		source.onended = () => {
 			if (this.isPlaying && !this.suppressEnded) {
-				this.pause(); // Pause at the end of the buffer instead of stopping
+				// Pause at the end of the buffer instead of stopping, so that the playhead remains at the end
+				this.pause();
 			}
 			this.suppressEnded = false;
 		};
@@ -202,13 +213,16 @@ class AudioEngine {
 
 	// Audio analysis
 
+	/**
+	 * The peak of the current audio buffer at the current position using a discrete maximum over the time domain data of the analyzer node.
+	 */
 	getPeak(): number {
 		if (!this.isPlaying) return 0;
 
-		this.analyser.getFloatTimeDomainData(this.analyserData);
+		this.analyzer.getFloatTimeDomainData(this.analyzerData);
 		let peak = 0;
-		for (let i = 0; i < this.analyserData.length; i++) {
-			const v = Math.abs(this.analyserData[i]);
+		for (let i = 0; i < this.analyzerData.length; i++) {
+			const v = Math.abs(this.analyzerData[i]);
 			if (v > peak) peak = v;
 		}
 
@@ -217,13 +231,19 @@ class AudioEngine {
 
 	// Playback
 
+	/** Whether the audio is currently playing. */
 	get playing() {
 		return this.isPlaying;
 	}
+	/** Pause or play the audio. */
 	togglePlay(): void {
 		if (this.isPlaying) this.pause();
 		else this.play();
 	}
+	/**
+	 * Create a new source node and start playback at the current {@link offset}.
+	 * Also applies any loop markers.
+	 */
 	play(): void {
 		if (this.isPlaying || !this.buffer) return;
 
@@ -242,19 +262,24 @@ class AudioEngine {
 		this.isPlaying = true;
 		this.startClock();
 	}
+	/**
+	 * Pause playback.
+	 * Sets the playback position to the current playback time, so that we can resume playback at the same position.
+	 */
 	pause(): void {
 		if (!this.isPlaying) return;
-
 		this.offset = this.playbackPosition;
 		this.sourceNode?.stop();
-
 		this.sourceNode = null;
 		this.isPlaying = false;
 	}
+	/**
+	 * Stop playback by stopping the internal clock.
+	 * Also, the playback position is reset to 0.
+	 */
 	stop(): void {
 		this.sourceNode?.stop();
 		this.sourceNode = null;
-
 		this.offset = 0;
 		this.isPlaying = false;
 		this.stopClock();
@@ -262,6 +287,12 @@ class AudioEngine {
 
 	// Seeking
 
+	/**
+	 * Set the playback position to the given time.
+	 * If the audio is currently playing, the playback will be paused and resumed at the new position.
+	 * If a loop is enabled, the playback position will be clamped to the loop markers.
+	 * @param time The time to seek to, in playback-time seconds.
+	 */
 	seekTo(time: number): void {
 		this.doDuringPlayback(() => {
 			// Clamp target time while accounting for loop
@@ -275,15 +306,24 @@ class AudioEngine {
 			this.offset = clamped;
 		});
 	}
+	/**
+	 * Move the playback position by the given delta.
+	 * @param delta The time to seek by, in playback-time seconds.
+	 */
 	seekBy(delta: number): void {
 		this.seekTo(this.playbackPosition + delta);
 	}
 
 	// Playback speed
 
+	/** The current playback speed (1.0 = normal, 2.0 = double, 0.5 = half). */
 	get playbackSpeed() {
 		return this.playbackRate;
 	}
+	/**
+	 * Set the playback speed to a new value.
+	 * @param newRate The new playback speed (1.0 = normal, 2.0 = double, 0.5 = half).
+	 */
 	setPlaybackSpeed(newRate: number): void {
 		// Keep track of original position in buffer time, before playbackRate is updated.
 		const bufferPosition = this.bufferPosition;
@@ -319,12 +359,21 @@ class AudioEngine {
 
 	// Looping
 
+	/**
+	 * Apply the loop markers to the source node.
+	 */
 	private applyLoop() {
 		if (!this.sourceNode) return;
 		this.sourceNode.loop = this.enableLooping;
 		this.sourceNode.loopStart = this.loopMarkers?.start || 0;
 		this.sourceNode.loopEnd = this.loopMarkers?.end || 0;
 	}
+	/**
+	 * Set a loop region and enable looping.
+	 * If the audio is currently playing, the playback will be paused and resumed at the start of the loop.
+	 * @param start Start of the loop, in buffer-time seconds.
+	 * @param end  End of the loop, in buffer-time seconds.
+	 */
 	setLoop(start: number, end: number) {
 		this.doDuringPlayback(() => {
 			// Set loop
@@ -335,6 +384,7 @@ class AudioEngine {
 			this.offset = start / this.playbackRate;
 		});
 	}
+	/** Clear the current loop region (if any) and disable looping. */
 	clearLoop() {
 		if (!this.loopMarkers) return;
 		this.doDuringPlayback(() => {
@@ -342,6 +392,10 @@ class AudioEngine {
 			this.loopMarkers = null;
 		});
 	}
+	/**
+	 * Toggle between enabling/disabling looping.
+	 * Will jump to the start of the loop if necessary.
+	 */
 	toggleLooping() {
 		if (!this.loopMarkers) return;
 		this.doDuringPlayback(() => {
