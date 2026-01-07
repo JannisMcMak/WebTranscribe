@@ -7,6 +7,7 @@
 	import audioEngine from '$lib/engine/engine.svelte';
 	import { waveformState } from '$lib/stores.svelte';
 	import { formatTime } from '$lib/utils';
+	import { Spinner } from '$lib/components/ui/spinner';
 
 	interface Props {
 		children?: Snippet;
@@ -81,7 +82,17 @@
 	onDestroy(() => ws?.destroy());
 </script>
 
-<div id="waveform" bind:this={container} class="relative">
+{#if audioEngine.isLoading}
+	<div class="flex w-full translate-y-28 justify-center">
+		<Spinner />
+	</div>
+{/if}
+<div
+	id="waveform"
+	bind:this={container}
+	class="relative transition-opacity duration-500"
+	class:opacity-0={audioEngine.isLoading}
+>
 	{#if children}
 		{@render children()}
 	{/if}

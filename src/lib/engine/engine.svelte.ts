@@ -60,6 +60,8 @@ class AudioEngine {
 	volume = $state(1);
 
 	// ----- Other -----
+	isLoading = $state(false);
+
 	/** Wether to ignore the AudioBufferSourceNode `ended` event (used when seeking). */
 	private suppressEnded = false;
 
@@ -113,14 +115,16 @@ class AudioEngine {
 		this.buffer = null;
 	}
 	async loadAudio(blob: Blob): Promise<void> {
+		this.isLoading = true;
+		this.audioBlob = blob;
 		const arrayBuffer = await blob.arrayBuffer();
 		const decoded = await this.ctx.decodeAudioData(arrayBuffer);
 		if (decoded.length === 0) {
 			throw new Error('Audio file is empty or could not be decoded');
 		}
-		this.audioBlob = blob;
 		this.buffer = decoded;
 		this.stop();
+		this.isLoading = false;
 	}
 
 	// Helpers
