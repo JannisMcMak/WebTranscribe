@@ -1,6 +1,7 @@
 <script lang="ts">
 	import WaveSurfer from 'wavesurfer.js';
 	import Timeline from 'wavesurfer.js/dist/plugins/timeline.js';
+	import Region from 'wavesurfer.js/dist/plugins/regions.js';
 	import Hover from 'wavesurfer.js/dist/plugins/hover.js';
 	import Zoom from 'wavesurfer.js/dist/plugins/zoom.js';
 	import { onMount, onDestroy, type Snippet } from 'svelte';
@@ -20,6 +21,7 @@
 	onMount(() => {
 		const hoverPlugin = Hover.create({ labelSize: 0 });
 		const zoomPlugin = Zoom.create();
+		const regionPlugin = Region.create();
 		const timelinePlugin = Timeline.create({
 			insertPosition: 'beforebegin',
 			formatTimeCallback: (s) => formatTime(s, true)
@@ -32,8 +34,7 @@
 				'--accent-foreground'
 			),
 			cursorColor: getComputedStyle(document.documentElement).getPropertyValue('--destructive'),
-			plugins: [hoverPlugin, zoomPlugin, timelinePlugin],
-			dragToSeek: true
+			plugins: [hoverPlugin, zoomPlugin, regionPlugin, timelinePlugin]
 		});
 
 		// Register global actions
@@ -78,6 +79,29 @@
 			(relX) => (waveformState.hoverPosition = relX * audioEngine.bufferDuration)
 		);
 		container.addEventListener('mouseleave', () => (waveformState.hoverPosition = 0));
+
+		// Enable regions by dragging
+		regionPlugin.enableDragSelection({
+			color: '#e7000b30',
+			minLength: 1
+		});
+		regionPlugin.on('region-created', (region) => {
+			// Allow the user to select loop region
+			audioEngine.setLoop(region.start, region.end);
+			// Remove all other regions
+			regionPlugin
+				.getRegions()
+				.filter((r) => r.id !== region.id)
+				.forEach((r) => r.remove());
+		});
+		regionPlugin.on('region-updated', (region) => {
+			// Keep loop markers in the audio engine updated
+			audioEngine.setLoop(region.start, region.end);
+		});
+		// Clear region if audio engine loop is cleared
+		$effect(() => {
+			if (!audioEngine.playbackLoopMarkers) regionPlugin.clearRegions();
+		});
 	});
 
 	onDestroy(() => ws?.destroy());

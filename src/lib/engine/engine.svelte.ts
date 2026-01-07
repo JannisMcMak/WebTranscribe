@@ -46,18 +46,33 @@ class AudioEngine {
 	private now = $state(0);
 	private rafID: number | undefined;
 
+	// ----- Controls state -----
+	/** Playback speed. */
+	private playbackRate = $state(1);
+	/** Volume (number between 0 and 2. Default 1). */
+	volume = $state(1);
+	/**
+	 * Flag controlling wether the audio should loop at the given loop points.
+	 * This is always false if no loop is set.
+	 */
+	enableLooping = $state(false);
+
 	// ----- Playback state -----
 	private isPlaying = $state(false);
 	/** Time in seconds when playback started (Playback Time). */
 	private startTime = $state(0);
 	/** Time in seconds where to start playback (Playback Time). */
 	private offset = $state(0);
-
-	// ----- Controls state -----
-	/** Playback speed. */
-	private playbackRate = $state(1);
-	/** Volume (number between 0 and 2. Default 1). */
-	volume = $state(1);
+	/** Loop start and end in seconds. */
+	private loopMarkers: { start: number; end: number } | null = $state(null);
+	readonly playbackLoopMarkers = $derived(
+		this.loopMarkers
+			? {
+					start: this.loopMarkers.start / this.playbackRate,
+					end: this.loopMarkers.end / this.playbackRate
+				}
+			: null
+	);
 
 	// ----- Other -----
 	isLoading = $state(false);
@@ -67,20 +82,29 @@ class AudioEngine {
 
 	// ---- Derived values -----
 	/** Duration in seconds of the original audio (Buffer Time). */
-	bufferDuration = $derived(this.buffer ? this.buffer.duration : 0);
+	readonly bufferDuration = $derived(this.buffer ? this.buffer.duration : 0);
 	/** Duration in seconds of the processed audio (Playback Time). */
-	duration = $derived(this.bufferDuration / this.playbackRate);
+	readonly duration = $derived(this.bufferDuration / this.playbackRate);
 	/** Current position in seconds (Buffer Time). */
-	bufferPosition = $derived.by(() => {
+	readonly bufferPosition = $derived.by(() => {
 		const bufferOffset = this.offset * this.playbackRate;
-		if (this.isPlaying) {
-			const elapsed = (this.now - this.startTime) * this.playbackRate;
-			return Math.min(bufferOffset + elapsed, this.bufferDuration);
+		if (!this.isPlaying) return bufferOffset;
+
+		const elapsed = (this.now - this.startTime) * this.playbackRate;
+		let pos = bufferOffset + elapsed;
+
+		// Account for looping
+		if (this.enableLooping && this.loopMarkers) {
+			const loopLength = this.loopMarkers.end - this.loopMarkers.start;
+			if (loopLength > 0 && pos >= this.loopMarkers.start) {
+				pos = this.loopMarkers.start + ((pos - this.loopMarkers.start) % loopLength);
+			}
 		}
-		return bufferOffset;
+
+		return Math.min(pos, this.bufferDuration);
 	});
 	/** Current position in seconds (Playback Time). */
-	playbackPosition = $derived.by(() => this.bufferPosition / this.playbackRate);
+	readonly playbackPosition = $derived.by(() => this.bufferPosition / this.playbackRate);
 
 	constructor() {
 		this.ctx = new AudioContext();
@@ -159,6 +183,23 @@ class AudioEngine {
 		return source;
 	}
 
+	/**
+	 * Helper for executing an action that may be performend during playback.
+	 * If we are currently playing, we pause, perform the action, and resume playback at the same position.
+	 * If {@link offset} is set inside {@link fn}, the playback will be resumed at the new position.
+	 */
+	private doDuringPlayback(fn: () => void) {
+		const wasPlaying = this.isPlaying;
+		if (wasPlaying) {
+			this.suppressEnded = true;
+			this.pause();
+		}
+		fn();
+		if (wasPlaying) {
+			this.play();
+		}
+	}
+
 	// Audio analysis
 
 	getPeak(): number {
@@ -194,6 +235,7 @@ class AudioEngine {
 		this.sourceNode = this.createSource();
 		if (!this.sourceNode) return;
 
+		this.applyLoop();
 		this.startTime = this.ctx.currentTime;
 		this.sourceNode.start(0, this.offset * this.playbackRate);
 
@@ -221,22 +263,17 @@ class AudioEngine {
 	// Seeking
 
 	seekTo(time: number): void {
-		if (!this.buffer) return;
-		const wasPlaying = this.isPlaying;
-
-		if (wasPlaying) {
-			this.suppressEnded = true;
-			this.stop();
-		}
-
-		// Clamp target time
-		const clamped = Math.max(0, Math.min(time, this.duration));
-		this.offset = clamped;
-
-		// If currently playing, restart source at new offset
-		if (wasPlaying) {
-			this.play();
-		}
+		this.doDuringPlayback(() => {
+			// Clamp target time while accounting for loop
+			const minTime =
+				this.enableLooping && this.playbackLoopMarkers ? this.playbackLoopMarkers.start : 0;
+			const maxTime =
+				this.enableLooping && this.playbackLoopMarkers
+					? this.playbackLoopMarkers.end
+					: this.duration;
+			const clamped = Math.max(minTime, Math.min(time, maxTime));
+			this.offset = clamped;
+		});
 	}
 	seekBy(delta: number): void {
 		this.seekTo(this.playbackPosition + delta);
@@ -248,20 +285,14 @@ class AudioEngine {
 		return this.playbackRate;
 	}
 	setPlaybackSpeed(newRate: number): void {
-		const wasPlaying = this.isPlaying;
-
 		// Keep track of original position in buffer time, before playbackRate is updated.
 		const bufferPosition = this.bufferPosition;
 
-		if (wasPlaying) {
-			this.suppressEnded = true;
-			this.stop();
-		}
-
-		// Set new playbackRate and start source at new offset
-		this.playbackRate = newRate;
-		this.offset = bufferPosition / newRate;
-		if (wasPlaying) this.play();
+		this.doDuringPlayback(() => {
+			// Set new playbackRate and start source at new offset
+			this.playbackRate = newRate;
+			this.offset = bufferPosition / newRate;
+		});
 
 		// Counteract pitch distortion that comes from setting the sourceNode playbackRate.
 		this.pitchshiftNode?.setPitch(1 / newRate);
@@ -284,6 +315,39 @@ class AudioEngine {
 	volumeMute() {
 		if (this.volume > 0) this.volume = 0;
 		else this.volume = 1;
+	}
+
+	// Looping
+
+	private applyLoop() {
+		if (!this.sourceNode) return;
+		this.sourceNode.loop = this.enableLooping;
+		this.sourceNode.loopStart = this.loopMarkers?.start || 0;
+		this.sourceNode.loopEnd = this.loopMarkers?.end || 0;
+	}
+	setLoop(start: number, end: number) {
+		this.doDuringPlayback(() => {
+			// Set loop
+			this.enableLooping = true;
+			this.loopMarkers = { start, end };
+
+			// Set the playback to start at the start of the loop
+			this.offset = start / this.playbackRate;
+		});
+	}
+	clearLoop() {
+		if (!this.loopMarkers) return;
+		this.doDuringPlayback(() => {
+			this.enableLooping = false;
+			this.loopMarkers = null;
+		});
+	}
+	toggleLooping() {
+		if (!this.loopMarkers) return;
+		this.doDuringPlayback(() => {
+			this.enableLooping = !this.enableLooping;
+			if (this.enableLooping) this.offset = (this.loopMarkers?.start || 0) / this.playbackRate;
+		});
 	}
 }
 const audioEngine = new AudioEngine();

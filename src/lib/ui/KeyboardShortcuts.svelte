@@ -82,6 +82,16 @@
 		{
 			key: 'Comma',
 			callback: () => audioEngine.seekBy(-0.5)
+		},
+
+		// Looping
+		{
+			key: 'KeyT',
+			callback: () => audioEngine.toggleLooping()
+		},
+		{
+			key: 'KeyC',
+			callback: () => audioEngine.clearLoop()
 		}
 	];
 

@@ -47,6 +47,10 @@
 	bind:ref
 	bind:pressed
 	data-slot="toggle"
-	class={cn(toggleVariants({ variant, size }), className)}
+	class={cn(
+		toggleVariants({ variant, size }),
+		'hover:cursor-pointer data-[state=on]:*:[svg]:stroke-3',
+		className
+	)}
 	{...restProps}
 />

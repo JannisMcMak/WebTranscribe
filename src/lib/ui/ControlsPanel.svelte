@@ -13,6 +13,7 @@
 	import { Slider } from '$lib/components/ui/slider';
 	import { waveformState } from '$lib/stores.svelte';
 	import { Kbd, KbdGroup } from '$lib/components/ui/kbd';
+	import { Toggle } from '$lib/components/ui/toggle';
 
 	let {
 		ref = $bindable(null)
@@ -36,7 +37,7 @@
 
 		<!-- Playback controls -->
 		<div class="flex flex-col justify-between">
-			<div class="text-sm font-bold">Playback Controls</div>
+			<div class="text-sm font-bold">Playback</div>
 			<div class="flex space-x-2">
 				<Tooltip.Root>
 					<Tooltip.Trigger>
@@ -58,16 +59,42 @@
 					</Tooltip.Trigger>
 					<Tooltip.Content side="bottom">Stop <Kbd>Esc</Kbd></Tooltip.Content>
 				</Tooltip.Root>
+			</div>
+		</div>
 
+		<div class="flex flex-col justify-between">
+			<div class="text-sm font-bold">Loop</div>
+			<div class="flex space-x-2">
+				{#if audioEngine.playbackLoopMarkers}
+					<span>
+						{formatTime(audioEngine.playbackLoopMarkers.start)} - {formatTime(
+							audioEngine.playbackLoopMarkers.end
+						)}
+					</span>
+				{/if}
 				<Tooltip.Root>
 					<Tooltip.Trigger>
-						<Button variant="outline" size="icon">
+						<Toggle
+							variant="outline"
+							disabled={!audioEngine.playbackLoopMarkers}
+							pressed={audioEngine.enableLooping}
+							onPressedChange={() => audioEngine.toggleLooping()}
+						>
 							<RepeatIcon />
-						</Button>
+						</Toggle>
 					</Tooltip.Trigger>
 					<Tooltip.Content side="bottom">
 						Toggle Loop
 						<Kbd>T</Kbd>
+					</Tooltip.Content>
+				</Tooltip.Root>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						<Button variant="ghost" onclick={() => audioEngine.clearLoop()}>Clear</Button>
+					</Tooltip.Trigger>
+					<Tooltip.Content side="bottom">
+						Clear loop region
+						<Kbd>C</Kbd>
 					</Tooltip.Content>
 				</Tooltip.Root>
 			</div>
