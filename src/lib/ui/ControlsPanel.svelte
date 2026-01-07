@@ -22,7 +22,7 @@
 </script>
 
 <Card.Root class="h-auto w-full p-4" bind:ref>
-	<Card.Content class="flex w-full space-x-12 p-0">
+	<Card.Content class="flex w-full flex-wrap space-y-4 space-x-12 p-0">
 		<!-- Timing panel -->
 		<Card.Root class="flex-row items-center gap-4 p-3 font-mono">
 			<div class="text-3xl font-bold">
