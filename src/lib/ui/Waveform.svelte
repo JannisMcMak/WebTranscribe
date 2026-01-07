@@ -46,7 +46,8 @@
 			ws.setScrollTime(ws.getCurrentTime() - visibleTime / 2);
 		};
 		waveformState.resetZoom = () => {
-			console.warn('TODO');
+			ws.zoom(1);
+			ws.setScrollTime(0);
 		};
 
 		// Load audio into WaveSurfer every time the blob in the audio engine changes
