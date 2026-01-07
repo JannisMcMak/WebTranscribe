@@ -13,7 +13,10 @@ export type WithoutChildrenOrChild<T> = WithoutChildren<WithoutChild<T>>;
 export type WithElementRef<T, U extends HTMLElement = HTMLElement> = T & { ref?: U | null };
 
 /** Format time in seconds to MM:SS:MMM (zero-padded). */
-export function formatTime(time: number, excludeMillis = false): string {
+export function formatTime(time?: number, excludeMillis = false): string {
+	if (typeof time === 'undefined') {
+		return excludeMillis ? '--:--' : '--:--:---';
+	}
 	const minutes = Math.floor(time / 60);
 	const seconds = Math.floor(time % 60);
 	const milliseconds = Math.floor((time % 1) * 1000);

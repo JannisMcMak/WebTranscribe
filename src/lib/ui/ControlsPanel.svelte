@@ -1,11 +1,13 @@
 <script lang="ts">
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import * as Card from '$lib/components/ui/card';
+	import * as Item from '$lib/components/ui/item';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import SquareIcon from '@lucide/svelte/icons/square';
 	import RepeatIcon from '@lucide/svelte/icons/repeat';
 	import ScanSearch from '@lucide/svelte/icons/scan-search';
 	import UnfoldHorizontal from '@lucide/svelte/icons/unfold-horizontal';
+	import TrashIcon from '@lucide/svelte/icons/trash';
 	import { Button } from '$lib/components/ui/button';
 	import audioEngine, { playbackRateParam, volumeParam } from '$lib/engine/engine.svelte';
 	import ThemeButton from '$lib/components/ThemeButton.svelte';
@@ -14,180 +16,201 @@
 	import { waveformState } from '$lib/stores.svelte';
 	import { Kbd, KbdGroup } from '$lib/components/ui/kbd';
 	import { Toggle } from '$lib/components/ui/toggle';
+	import type { ItemSize, ItemVariant } from '$lib/components/ui/item/item.svelte';
 
 	let {
 		ref = $bindable(null)
 	}: {
 		ref?: HTMLDivElement | null;
 	} = $props();
+
+	const variant: ItemVariant = 'outline';
+	const size: ItemSize = 'sm';
 </script>
 
 <Card.Root class="h-auto w-full p-4" bind:ref>
-	<Card.Content class="flex w-full flex-wrap space-y-4 space-x-12 p-0">
+	<Card.Content class="flex w-full flex-wrap gap-4 p-0">
 		<!-- Timing panel -->
-		<Card.Root class="flex-row items-center gap-4 p-3 font-mono">
+		<Item.Root {size} {variant} class="font-mono">
 			<div class="text-3xl font-bold">
 				{formatTime(audioEngine.bufferPosition)}
 			</div>
-			<div class="flex flex-col text-sm text-muted-foreground">
+			<div class="ml-2 flex flex-col text-sm text-muted-foreground">
 				<span>{formatTime(waveformState.hoverPosition)}</span>
 				<span>{formatTime(audioEngine.bufferDuration)}</span>
 			</div>
-		</Card.Root>
+		</Item.Root>
 
 		<!-- Playback controls -->
-		<div class="flex flex-col justify-between">
-			<div class="text-sm font-bold">Playback</div>
-			<div class="flex space-x-2">
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						<PlayButton isPlaying={audioEngine.playing} onClick={() => audioEngine.togglePlay()} />
-					</Tooltip.Trigger>
-					<Tooltip.Content side="bottom">
-						{audioEngine.playing ? 'Pause' : 'Play'}
-						<KbdGroup>
-							<Kbd>Space</Kbd>/
-							<Kbd>K</Kbd>
-						</KbdGroup>
-					</Tooltip.Content>
-				</Tooltip.Root>
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						<Button variant="outline" size="icon" onclick={() => audioEngine.stop()}>
-							<SquareIcon />
-						</Button>
-					</Tooltip.Trigger>
-					<Tooltip.Content side="bottom">Stop <Kbd>Esc</Kbd></Tooltip.Content>
-				</Tooltip.Root>
-			</div>
-		</div>
+		<Item.Root {size} {variant}>
+			<Item.Content>
+				<Item.Title>Playback</Item.Title>
+				<Item.Description>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<PlayButton
+								isPlaying={audioEngine.playing}
+								onClick={() => audioEngine.togglePlay()}
+							/>
+						</Tooltip.Trigger>
+						<Tooltip.Content side="bottom">
+							{audioEngine.playing ? 'Pause' : 'Play'}
+							<KbdGroup>
+								<Kbd>Space</Kbd>/
+								<Kbd>K</Kbd>
+							</KbdGroup>
+						</Tooltip.Content>
+					</Tooltip.Root>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Button variant="outline" size="icon" onclick={() => audioEngine.stop()}>
+								<SquareIcon />
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content side="bottom">Stop <Kbd>Esc</Kbd></Tooltip.Content>
+					</Tooltip.Root>
+				</Item.Description>
+			</Item.Content>
+		</Item.Root>
 
-		<div class="flex flex-col justify-between">
-			<div class="text-sm font-bold">Loop</div>
-			<div class="flex space-x-2">
-				{#if audioEngine.playbackLoopMarkers}
-					<span>
-						{formatTime(audioEngine.playbackLoopMarkers.start)} - {formatTime(
-							audioEngine.playbackLoopMarkers.end
-						)}
-					</span>
-				{/if}
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						<Toggle
-							variant="outline"
-							disabled={!audioEngine.playbackLoopMarkers}
-							pressed={audioEngine.enableLooping}
-							onPressedChange={() => audioEngine.toggleLooping()}
-						>
-							<RepeatIcon />
-						</Toggle>
-					</Tooltip.Trigger>
-					<Tooltip.Content side="bottom">
-						Toggle Loop
-						<Kbd>T</Kbd>
-					</Tooltip.Content>
-				</Tooltip.Root>
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						<Button variant="ghost" onclick={() => audioEngine.clearLoop()}>Clear</Button>
-					</Tooltip.Trigger>
-					<Tooltip.Content side="bottom">
-						Clear loop region
-						<Kbd>C</Kbd>
-					</Tooltip.Content>
-				</Tooltip.Root>
+		<!-- Loop -->
+		<Item.Root {size} {variant}>
+			<Item.Content>
+				<Item.Title>Loop</Item.Title>
+				<Item.ItemDescription>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Toggle
+								variant="outline"
+								disabled={!audioEngine.playbackLoopMarkers}
+								pressed={audioEngine.enableLooping || !audioEngine.playbackLoopMarkers}
+								onPressedChange={() => audioEngine.toggleLooping()}
+							>
+								<RepeatIcon />
+							</Toggle>
+						</Tooltip.Trigger>
+						<Tooltip.Content side="bottom">
+							Toggle Loop
+							<Kbd>T</Kbd>
+						</Tooltip.Content>
+					</Tooltip.Root>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Button
+								size="icon"
+								variant="outline"
+								disabled={!audioEngine.playbackLoopMarkers}
+								onclick={() => audioEngine.clearLoop()}
+							>
+								<TrashIcon />
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content side="bottom">
+							Clear loop region
+							<Kbd>C</Kbd>
+						</Tooltip.Content>
+					</Tooltip.Root>
+				</Item.ItemDescription>
+			</Item.Content>
+			<div class="ml-2 flex flex-col items-end font-mono text-sm text-muted-foreground">
+				<span>
+					{formatTime(audioEngine.playbackLoopMarkers?.start)}
+				</span>
+				<span>{formatTime(audioEngine.playbackLoopMarkers?.end)}</span>
 			</div>
-		</div>
+		</Item.Root>
 
 		<!-- Playback speed -->
-		<div class="flex flex-col justify-between">
-			<div class="text-sm font-bold">Playback Speed</div>
-			<div class="flex items-end">
+		<!-- TODO block/(btn-icon)-sized slider with value label inside -->
+		<Item.Root {size} {variant}>
+			<Item.Content class="justify-betwen flex h-full flex-col">
+				<Item.Title>
+					Playback Speed
+					<span>{audioEngine.playbackSpeed.toFixed(2)}x</span>
+				</Item.Title>
+				<div class="flex items-center">
+					<Slider
+						type="single"
+						class="mb-1 min-w-48"
+						value={audioEngine.playbackSpeed}
+						onValueCommit={(x) => audioEngine.setPlaybackSpeed(x)}
+						{...playbackRateParam.sliderAttributes}
+					/>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Button size="sm" variant="ghost" onclick={() => audioEngine.setPlaybackSpeed(1)}>
+								Reset
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content side="bottom">
+							Reset playback speed
+							<Kbd>R</Kbd>
+						</Tooltip.Content>
+					</Tooltip.Root>
+				</div>
+			</Item.Content>
+		</Item.Root>
+
+		<!-- Volume -->
+		<Item.Root {size} {variant}>
+			<Item.Content>
+				<Item.Title>
+					Volume
+					<span>{Math.round(audioEngine.volume * 100)}%</span>
+				</Item.Title>
 				<Tooltip.Root>
 					<Tooltip.Trigger>
 						<Slider
 							type="single"
-							class="mb-1 min-w-48"
-							value={audioEngine.playbackSpeed}
-							onValueCommit={(x) => audioEngine.setPlaybackSpeed(x)}
-							valueFormatter={(value) => `${value.toFixed(2)}x`}
-							{...playbackRateParam.sliderAttributes}
+							class="mb-1 min-w-48 "
+							bind:value={audioEngine.volume}
+							{...volumeParam.sliderAttributes}
 						/>
 					</Tooltip.Trigger>
 					<Tooltip.Content side="bottom">
-						Playback speed
+						Volume
 						<KbdGroup>
-							<Kbd>Shift</Kbd>+<Kbd>&uparrow;</Kbd>
-							/
-							<Kbd>Shift</Kbd>+<Kbd>&downarrow;</Kbd>
+							<Kbd>&uparrow;</Kbd>/
+							<Kbd>&downarrow;</Kbd>
 						</KbdGroup>
 					</Tooltip.Content>
 				</Tooltip.Root>
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						<Button size="sm" variant="ghost" onclick={() => audioEngine.setPlaybackSpeed(1)}>
-							Reset
-						</Button>
-					</Tooltip.Trigger>
-					<Tooltip.Content side="bottom">
-						Reset playback speed
-						<Kbd>R</Kbd>
-					</Tooltip.Content>
-				</Tooltip.Root>
-			</div>
-		</div>
-
-		<!-- Volume -->
-		<div class="flex flex-col justify-between">
-			<div class="text-sm font-bold">Volume</div>
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					<Slider
-						type="single"
-						class="mb-1 min-w-48 "
-						bind:value={audioEngine.volume}
-						valueFormatter={(value) => `${Math.round(value * 100)}%`}
-						{...volumeParam.sliderAttributes}
-					/>
-				</Tooltip.Trigger>
-				<Tooltip.Content side="bottom">
-					Volume
-					<KbdGroup>
-						<Kbd>&uparrow;</Kbd>/
-						<Kbd>&downarrow;</Kbd>
-					</KbdGroup>
-				</Tooltip.Content>
-			</Tooltip.Root>
-		</div>
+			</Item.Content>
+		</Item.Root>
 
 		<!-- View -->
-		<div class="flex flex-col justify-between">
-			<div class="text-sm font-bold">View</div>
-			<div class="flex space-x-2">
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						<Button variant="outline" size="icon" onclick={() => waveformState.centerToPlayhead()}>
-							<UnfoldHorizontal />
-						</Button>
-					</Tooltip.Trigger>
-					<Tooltip.Content side="bottom">Center to Playhead</Tooltip.Content>
-				</Tooltip.Root>
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						<Button variant="outline" size="icon" onclick={() => waveformState.resetZoom()}>
-							<ScanSearch />
-						</Button>
-					</Tooltip.Trigger>
-					<Tooltip.Content side="bottom">Reset Zoom</Tooltip.Content>
-				</Tooltip.Root>
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						<ThemeButton />
-					</Tooltip.Trigger>
-					<Tooltip.Content side="bottom">Toggle theme</Tooltip.Content>
-				</Tooltip.Root>
-			</div>
-		</div>
+		<Item.Root {size} {variant}>
+			<Item.Content>
+				<Item.Title>View</Item.Title>
+				<Item.Description>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Button
+								variant="outline"
+								size="icon"
+								onclick={() => waveformState.centerToPlayhead()}
+							>
+								<UnfoldHorizontal />
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content side="bottom">Center to Playhead</Tooltip.Content>
+					</Tooltip.Root>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Button variant="outline" size="icon" onclick={() => waveformState.resetZoom()}>
+								<ScanSearch />
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content side="bottom">Reset Zoom</Tooltip.Content>
+					</Tooltip.Root>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<ThemeButton />
+						</Tooltip.Trigger>
+						<Tooltip.Content side="bottom">Toggle theme</Tooltip.Content>
+					</Tooltip.Root>
+				</Item.Description>
+			</Item.Content>
+		</Item.Root>
 	</Card.Content>
 </Card.Root>

@@ -6,12 +6,9 @@
 		ref = $bindable(null),
 		value = $bindable(),
 		orientation = 'horizontal',
-		valueFormatter,
 		class: className,
 		...restProps
-	}: WithoutChildrenOrChild<SliderPrimitive.RootProps> & {
-		valueFormatter?: (value: number) => string;
-	} = $props();
+	}: WithoutChildrenOrChild<SliderPrimitive.RootProps> = $props();
 </script>
 
 <!--
@@ -50,14 +47,6 @@ get along, so we shut typescript up by casting `value` to `never`.
 				index={thumb.index}
 				class="block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
 			/>
-			{#if valueFormatter}
-				<SliderPrimitive.ThumbLabel
-					index={thumb.index}
-					class="mb-2 rounded-md bg-muted px-2 py-0.5 text-xs text-nowrap text-foreground"
-				>
-					{valueFormatter(thumb.value)}
-				</SliderPrimitive.ThumbLabel>
-			{/if}
 		{/each}
 	{/snippet}
 </SliderPrimitive.Root>
