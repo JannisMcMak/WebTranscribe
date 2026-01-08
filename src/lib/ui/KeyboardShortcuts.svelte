@@ -53,27 +53,19 @@
 		// Seeking
 		{
 			key: 'ArrowRight',
-			callback: () => audioEngine.seekBy(3)
+			callback: () => audioEngine.seekBy(5)
 		},
 		{
 			key: 'ArrowLeft',
-			callback: () => audioEngine.seekBy(-3)
+			callback: () => audioEngine.seekBy(-5)
 		},
 		{
 			key: 'KeyL',
-			callback: () => audioEngine.seekBy(7)
+			callback: () => audioEngine.seekBy(10)
 		},
 		{
 			key: 'KeyJ',
-			callback: () => audioEngine.seekBy(-7)
-		},
-		{
-			key: 'KeyL',
-			callback: () => audioEngine.seekBy(7)
-		},
-		{
-			key: 'KeyJ',
-			callback: () => audioEngine.seekBy(-7)
+			callback: () => audioEngine.seekBy(-10)
 		},
 		{
 			key: 'Period',

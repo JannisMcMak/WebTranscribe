@@ -140,6 +140,6 @@
 		font-size: 18px;
 		content: '▼';
 		position: absolute;
-		translate: -7.5px -10px;
+		translate: -6.3px -10px;
 	}
 </style>

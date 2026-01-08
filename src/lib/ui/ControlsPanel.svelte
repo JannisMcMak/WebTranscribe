@@ -8,6 +8,9 @@
 	import ScanSearch from '@lucide/svelte/icons/scan-search';
 	import UnfoldHorizontal from '@lucide/svelte/icons/unfold-horizontal';
 	import TrashIcon from '@lucide/svelte/icons/trash';
+	import RotateCCW from '@lucide/svelte/icons/rotate-ccw';
+	import StepBack from '@lucide/svelte/icons/step-back';
+	import StepForward from '@lucide/svelte/icons/step-forward';
 	import { Button } from '$lib/components/ui/button';
 	import audioEngine, { playbackRateParam, volumeParam } from '$lib/engine/engine.svelte';
 	import ThemeButton from '$lib/components/ThemeButton.svelte';
@@ -45,7 +48,7 @@
 		<Item.Root {size} {variant}>
 			<Item.Content>
 				<Item.Title>Playback</Item.Title>
-				<Item.Description>
+				<Item.Description class="flex gap-2">
 					<Tooltip.Root>
 						<Tooltip.Trigger>
 							<PlayButton
@@ -69,6 +72,22 @@
 						</Tooltip.Trigger>
 						<Tooltip.Content side="bottom">Stop <Kbd>Esc</Kbd></Tooltip.Content>
 					</Tooltip.Root>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Button variant="outline" size="icon" onclick={() => audioEngine.seekBy(-5)}>
+								<StepBack />
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content side="bottom">Seek Back <Kbd>&leftarrow;</Kbd></Tooltip.Content>
+					</Tooltip.Root>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Button variant="outline" size="icon" onclick={() => audioEngine.seekBy(5)}>
+								<StepForward />
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content side="bottom">Seek Forward <Kbd>&rightarrow;</Kbd></Tooltip.Content>
+					</Tooltip.Root>
 				</Item.Description>
 			</Item.Content>
 		</Item.Root>
@@ -77,7 +96,7 @@
 		<Item.Root {size} {variant}>
 			<Item.Content>
 				<Item.Title>Loop</Item.Title>
-				<Item.ItemDescription>
+				<Item.ItemDescription class="flex gap-2">
 					<Tooltip.Root>
 						<Tooltip.Trigger>
 							<Toggle
@@ -125,7 +144,7 @@
 		<Item.Root {size} {variant}>
 			<Item.Content class="justify-betwen flex h-full flex-col">
 				<Item.Title>Playback Speed</Item.Title>
-				<div class="flex items-center">
+				<Item.Description class="flex items-center gap-2">
 					<Slider
 						type="single"
 						class="min-w-48"
@@ -136,8 +155,8 @@
 					/>
 					<Tooltip.Root>
 						<Tooltip.Trigger>
-							<Button size="sm" variant="ghost" onclick={() => audioEngine.setPlaybackSpeed(1)}>
-								Reset
+							<Button size="icon" variant="outline" onclick={() => audioEngine.setPlaybackSpeed(1)}>
+								<RotateCCW />
 							</Button>
 						</Tooltip.Trigger>
 						<Tooltip.Content side="bottom">
@@ -145,7 +164,7 @@
 							<Kbd>R</Kbd>
 						</Tooltip.Content>
 					</Tooltip.Root>
-				</div>
+				</Item.Description>
 			</Item.Content>
 		</Item.Root>
 
@@ -178,7 +197,7 @@
 		<Item.Root {size} {variant}>
 			<Item.Content>
 				<Item.Title>View</Item.Title>
-				<Item.Description>
+				<Item.Description class="flex gap-2">
 					<Tooltip.Root>
 						<Tooltip.Trigger>
 							<Button
