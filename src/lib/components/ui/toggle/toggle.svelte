@@ -49,7 +49,7 @@
 	data-slot="toggle"
 	class={cn(
 		toggleVariants({ variant, size }),
-		'hover:cursor-pointer data-[state=on]:*:[svg]:stroke-3',
+		'hover:cursor-pointer enabled:data-[state=on]:*:[svg]:stroke-3',
 		className
 	)}
 	{...restProps}

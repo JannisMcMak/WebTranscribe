@@ -7,8 +7,11 @@
 		value = $bindable(),
 		orientation = 'horizontal',
 		class: className,
+		valueFormatter = (value) => `${value}`,
 		...restProps
-	}: WithoutChildrenOrChild<SliderPrimitive.RootProps> = $props();
+	}: WithoutChildrenOrChild<SliderPrimitive.RootProps> & {
+		valueFormatter?: (value: number) => string;
+	} = $props();
 </script>
 
 <!--
@@ -21,7 +24,7 @@ get along, so we shut typescript up by casting `value` to `never`.
 	data-slot="slider"
 	{orientation}
 	class={cn(
-		'relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col',
+		'relative flex w-full touch-none items-center rounded-md select-none data-disabled:opacity-50',
 		className
 	)}
 	{...restProps}
@@ -31,22 +34,27 @@ get along, so we shut typescript up by casting `value` to `never`.
 			data-orientation={orientation}
 			data-slot="slider-track"
 			class={cn(
-				'relative grow overflow-hidden rounded-full bg-muted data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5'
+				'relative h-9 w-full grow overflow-hidden rounded-md border bg-background shadow-xs dark:border-input dark:bg-input/30'
 			)}
 		>
 			<SliderPrimitive.Range
 				data-slot="slider-range"
-				class={cn(
-					'absolute bg-primary data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full'
-				)}
+				class={cn('absolute h-full bg-muted-foreground/10')}
 			/>
 		</span>
 		{#each thumbItems as thumb (thumb)}
 			<SliderPrimitive.Thumb
 				data-slot="slider-thumb"
 				index={thumb.index}
-				class="block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+				class="block h-full w-1.5 shrink-0 rounded-md bg-muted-foreground shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
 			/>
 		{/each}
+		<span
+			class="absolute font-mono text-xs text-muted-foreground"
+			class:left-2={(value as number) > (restProps?.max || 1) / 2}
+			class:right-2={(value as number) <= (restProps?.max || 1) / 2}
+		>
+			{valueFormatter(value as number)}
+		</span>
 	{/snippet}
 </SliderPrimitive.Root>

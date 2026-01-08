@@ -124,16 +124,14 @@
 		<!-- TODO block/(btn-icon)-sized slider with value label inside -->
 		<Item.Root {size} {variant}>
 			<Item.Content class="justify-betwen flex h-full flex-col">
-				<Item.Title>
-					Playback Speed
-					<span>{audioEngine.playbackSpeed.toFixed(2)}x</span>
-				</Item.Title>
+				<Item.Title>Playback Speed</Item.Title>
 				<div class="flex items-center">
 					<Slider
 						type="single"
-						class="mb-1 min-w-48"
+						class="min-w-48"
 						value={audioEngine.playbackSpeed}
 						onValueCommit={(x) => audioEngine.setPlaybackSpeed(x)}
+						valueFormatter={(x) => `${x.toFixed(2)}x`}
 						{...playbackRateParam.sliderAttributes}
 					/>
 					<Tooltip.Root>
@@ -154,16 +152,14 @@
 		<!-- Volume -->
 		<Item.Root {size} {variant}>
 			<Item.Content>
-				<Item.Title>
-					Volume
-					<span>{Math.round(audioEngine.volume * 100)}%</span>
-				</Item.Title>
+				<Item.Title>Volume</Item.Title>
 				<Tooltip.Root>
 					<Tooltip.Trigger>
 						<Slider
 							type="single"
-							class="mb-1 min-w-48 "
+							class="min-w-48"
 							bind:value={audioEngine.volume}
+							valueFormatter={(x) => `${Math.round(x * 100)}%`}
 							{...volumeParam.sliderAttributes}
 						/>
 					</Tooltip.Trigger>
