@@ -126,6 +126,12 @@ class AudioEngine {
 	get blob() {
 		return this.audioBlob;
 	}
+	get audioData() {
+		return this.buffer?.getChannelData(0) || null;
+	}
+	get sampleRate() {
+		return this.buffer?.sampleRate || 0;
+	}
 	/** Clears the currently loaded audio file. */
 	clearAudio(): void {
 		this.stop();

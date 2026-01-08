@@ -37,19 +37,13 @@
 			plugins: [hoverPlugin, zoomPlugin, regionPlugin, timelinePlugin]
 		});
 
-		// Register global actions
-		waveformState.centerToPlayhead = () => {
-			// Size of the visible area / size of the total waveform (in px)
-			const zoom = ws.getWidth() / ws.getWrapper().scrollWidth;
-			if (zoom === 1) return; // Return early if the waveform is fully zoomed out
-			// Number of seconds that are visible
-			const visibleTime = ws.getDuration() * zoom;
-			ws.setScrollTime(ws.getCurrentTime() - visibleTime / 2);
+		// --- Helpers ---
+		const getZoomLevel = () => {
+			// Fraction of the total duration that is visible
+			return ws.getWidth() / ws.getWrapper().scrollWidth;
 		};
-		waveformState.resetZoom = () => {
-			ws.zoom(1);
-			ws.setScrollTime(0);
-		};
+
+		// --- Sync to/from custom audio engine ---
 
 		// Load audio into WaveSurfer every time the blob in the audio engine changes
 		$effect(() => {
@@ -73,12 +67,36 @@
 			audioEngine.seekTo(playbackTime);
 		});
 
-		// Keep track of wavesurfer state
+		// --- Sync to global waveform store ---
+
+		// Register global actions
+		waveformState.centerToPlayhead = () => {
+			const zoom = getZoomLevel();
+			if (zoom === 1) return; // Return early if the waveform is fully zoomed out
+			// Number of seconds that are visible
+			const visibleTime = ws.getDuration() * zoom;
+			ws.setScrollTime(ws.getCurrentTime() - visibleTime / 2);
+		};
+		waveformState.resetZoom = () => {
+			ws.zoom(1);
+			ws.setScrollTime(0);
+		};
+
+		// Sync state variables
 		hoverPlugin.on(
 			'hover',
 			(relX) => (waveformState.hoverPosition = relX * audioEngine.bufferDuration)
 		);
 		container.addEventListener('mouseleave', () => (waveformState.hoverPosition = 0));
+		ws.on('zoom', () => (waveformState.zoom = getZoomLevel()));
+		ws.on(
+			'scroll',
+			() =>
+				(waveformState.scrollPosition =
+					(ws.getScroll() / ws.getWrapper().scrollWidth) * audioEngine.bufferDuration)
+		);
+
+		// --- Regions ---
 
 		// Enable regions by dragging
 		regionPlugin.enableDragSelection({

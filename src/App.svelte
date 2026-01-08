@@ -18,40 +18,42 @@
 	import { innerHeight } from 'svelte/reactivity/window';
 	import VolumeMeter from '$lib/ui/VolumeMeter.svelte';
 
+	let audioWorker: ReturnType<typeof createAnalysisWorker> | null = null;
+
 	onMount(async () => {
 		await initWasm();
 		const fooResult = foo(new Float32Array([1, 2, 3]));
 		if (fooResult === 3) console.log('WASM works');
 
-		// const audioWorker = createAnalysisWorker();
-		// audioWorker.onMessage((msg) => {
-		// 	switch (msg.type) {
-		// 		case 'pitch':
-		// 			analysisState.pitchTrack = msg.data;
-		// 			break;
-		// 		case 'onset':
-		// 			analysisState.beats = msg.data;
-		// 			break;
-		// 	}
-		// });
-		// console.log('Created audio worker');
-		// while (!audioState.buffer) {
-		// 	// Wait for the audio buffer to be loaded
-		// 	await new Promise((resolve) => setTimeout(resolve, 100));
-		// }
-		// console.log('Registered audio buffer');
-		// // Do analysis
-		// audioWorker.post({
-		// 	type: 'pitch',
-		// 	buffer: audioState.buffer.getChannelData(0),
-		// 	sampleRate: audioState.sampleRate
-		// });
-		// audioWorker.post({
-		// 	type: 'onset',
-		// 	buffer: audioState.buffer.getChannelData(0),
-		// 	sampleRate: audioState.sampleRate
-		// });
+		audioWorker = createAnalysisWorker();
+		audioWorker.onMessage((msg) => {
+			switch (msg.type) {
+				case 'pitch':
+					analysisState.pitchTrack = msg.data;
+					break;
+				case 'onset':
+					analysisState.beats = msg.data;
+					break;
+			}
+		});
+		console.log('Created audio worker');
 	});
+
+	const loadAudio = async (b: Blob) => {
+		await audioEngine.loadAudio(b);
+
+		// Do analysis
+		// audioWorker?.post({
+		// 	type: 'pitch',
+		// 	buffer: audioEngine.audioData ?? new Float32Array([]),
+		// 	sampleRate: audioEngine.sampleRate
+		// });
+		audioWorker?.post({
+			type: 'onset',
+			buffer: audioEngine.audioData ?? new Float32Array([]),
+			sampleRate: audioEngine.sampleRate
+		});
+	};
 
 	let controlsPanel = $state<HTMLDivElement | null>(null);
 	let footer = $state<HTMLDivElement | null>(null);
@@ -85,7 +87,7 @@
 					bind:this={fileInput}
 					onchange={() => {
 						if (!fileInput?.files) return;
-						audioEngine.loadAudio(fileInput.files[0]);
+						loadAudio(fileInput.files[0]);
 					}}
 				/>
 				<Button onclick={() => fileInput?.click()}>
@@ -98,7 +100,7 @@
 					onclick={() => {
 						fetch('/sample.mp3')
 							.then((response) => response.blob())
-							.then((blob) => audioEngine.loadAudio(blob));
+							.then(loadAudio);
 					}}>Load Sample</Button
 				>
 			</div>

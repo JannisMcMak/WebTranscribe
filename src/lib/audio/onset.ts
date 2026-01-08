@@ -1,6 +1,8 @@
 import FFT from 'fft.js';
 
 export default function extractOnsets(buffer: Float32Array, sampleRate: number): number[] {
+	const startTime = new Date();
+
 	const frameSize = 2048;
 	const hopSize = 512;
 
@@ -57,6 +59,8 @@ export default function extractOnsets(buffer: Float32Array, sampleRate: number):
 			}
 		}
 	}
+
+	console.log(`Extracted onsets in ${new Date().getTime() - startTime.getTime()}ms`);
 
 	return onsets;
 }
