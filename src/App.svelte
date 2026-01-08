@@ -55,6 +55,7 @@
 
 	let controlsPanel = $state<HTMLDivElement | null>(null);
 	let footer = $state<HTMLDivElement | null>(null);
+	let fileInput = $state<HTMLInputElement | null>(null);
 </script>
 
 <ModeWatcher />
@@ -77,7 +78,17 @@
 		{:else}
 			<div class="flex h-full w-full flex-col items-center justify-center space-y-2">
 				<div class="font-bold text-muted-foreground">No audio loaded</div>
-				<Button>
+				<input
+					class="hidden"
+					type="file"
+					accept="audio/*"
+					bind:this={fileInput}
+					onchange={() => {
+						if (!fileInput?.files) return;
+						audioEngine.loadAudio(fileInput.files[0]);
+					}}
+				/>
+				<Button onclick={() => fileInput?.click()}>
 					<Upload />
 					Upload File
 				</Button>
