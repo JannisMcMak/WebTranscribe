@@ -82,8 +82,8 @@
 						<Tooltip.Trigger>
 							<Toggle
 								variant="outline"
-								disabled={!audioEngine.playbackLoopMarkers}
-								pressed={audioEngine.enableLooping || !audioEngine.playbackLoopMarkers}
+								disabled={!audioEngine.loop}
+								pressed={audioEngine.enableLooping || !audioEngine.loop}
 								onPressedChange={() => audioEngine.toggleLooping()}
 							>
 								<RepeatIcon />
@@ -99,7 +99,7 @@
 							<Button
 								size="icon"
 								variant="outline"
-								disabled={!audioEngine.playbackLoopMarkers}
+								disabled={!audioEngine.loop}
 								onclick={() => audioEngine.clearLoop()}
 							>
 								<TrashIcon />
@@ -114,9 +114,9 @@
 			</Item.Content>
 			<div class="ml-2 flex flex-col items-end font-mono text-sm text-muted-foreground">
 				<span>
-					{formatTime(audioEngine.playbackLoopMarkers?.start)}
+					{formatTime(audioEngine.loop?.start)}
 				</span>
-				<span>{formatTime(audioEngine.playbackLoopMarkers?.end)}</span>
+				<span>{formatTime(audioEngine.loop?.end)}</span>
 			</div>
 		</Item.Root>
 

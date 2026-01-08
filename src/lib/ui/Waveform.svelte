@@ -100,7 +100,7 @@
 		});
 		// Clear region if audio engine loop is cleared
 		$effect(() => {
-			if (!audioEngine.playbackLoopMarkers) regionPlugin.clearRegions();
+			if (!audioEngine.loop) regionPlugin.clearRegions();
 		});
 	});
 

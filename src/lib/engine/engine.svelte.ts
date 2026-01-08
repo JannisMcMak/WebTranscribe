@@ -63,16 +63,8 @@ class AudioEngine {
 	private startTime = $state(0);
 	/** Time in seconds where to start playback (Playback Time). */
 	private offset = $state(0);
-	/** Loop start and end in seconds. */
+	/** Loop start and end in seconds (Plaback Time). */
 	private loopMarkers: { start: number; end: number } | null = $state(null);
-	readonly playbackLoopMarkers = $derived(
-		this.loopMarkers
-			? {
-					start: this.loopMarkers.start / this.playbackRate,
-					end: this.loopMarkers.end / this.playbackRate
-				}
-			: null
-	);
 
 	// ----- Other -----
 	/** Wether the audio is currently loading. */
@@ -295,13 +287,17 @@ class AudioEngine {
 	 */
 	seekTo(time: number): void {
 		this.doDuringPlayback(() => {
+			const playbackLoopMarkers = this.loopMarkers
+				? {
+						start: this.loopMarkers.start / this.playbackRate,
+						end: this.loopMarkers.end / this.playbackRate
+					}
+				: null;
+
 			// Clamp target time while accounting for loop
-			const minTime =
-				this.enableLooping && this.playbackLoopMarkers ? this.playbackLoopMarkers.start : 0;
+			const minTime = this.enableLooping && playbackLoopMarkers ? playbackLoopMarkers.start : 0;
 			const maxTime =
-				this.enableLooping && this.playbackLoopMarkers
-					? this.playbackLoopMarkers.end
-					: this.duration;
+				this.enableLooping && playbackLoopMarkers ? playbackLoopMarkers.end : this.duration;
 			const clamped = Math.max(minTime, Math.min(time, maxTime));
 			this.offset = clamped;
 		});
@@ -359,6 +355,10 @@ class AudioEngine {
 
 	// Looping
 
+	/** Current loop markers in buffer time or null if no loop is set. */
+	get loop() {
+		return this.loopMarkers;
+	}
 	/**
 	 * Apply the loop markers to the source node.
 	 */
