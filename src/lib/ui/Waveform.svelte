@@ -96,11 +96,22 @@
 		});
 		regionPlugin.on('region-updated', (region) => {
 			// Keep loop markers in the audio engine updated
-			audioEngine.setLoop(region.start, region.end);
+			audioEngine.updateLoop(region.start, region.end);
 		});
 		// Clear region if audio engine loop is cleared
 		$effect(() => {
 			if (!audioEngine.loop) regionPlugin.clearRegions();
+		});
+		// Set region color on enable/disable
+		$effect(() => {
+			if (audioEngine.enableLooping)
+				regionPlugin.getRegions().forEach((r) => {
+					r.setOptions({ color: '#e7000b36' });
+				});
+			else
+				regionPlugin.getRegions().forEach((r) => {
+					r.setOptions({ color: '#71717b26' });
+				});
 		});
 	});
 

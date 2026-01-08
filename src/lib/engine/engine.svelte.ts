@@ -384,6 +384,16 @@ class AudioEngine {
 			this.offset = start / this.playbackRate;
 		});
 	}
+	updateLoop(start: number, end: number) {
+		if (!this.loopMarkers) return;
+		// Only set the marker varibles, because the loop is disabled.
+		// They will be applied when the loop is enabled again.
+		if (!this.enableLooping) this.loopMarkers = { start, end };
+		// Call setLoop if the loop is enabled.
+		// This will pause the playback and resume it at the start of the loop,
+		// to ensure we stay within the loop region.
+		else this.setLoop(start, end);
+	}
 	/** Clear the current loop region (if any) and disable looping. */
 	clearLoop() {
 		if (!this.loopMarkers) return;

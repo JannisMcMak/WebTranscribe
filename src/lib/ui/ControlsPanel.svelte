@@ -83,7 +83,7 @@
 							<Toggle
 								variant="outline"
 								disabled={!audioEngine.loop}
-								pressed={audioEngine.enableLooping || !audioEngine.loop}
+								pressed={audioEngine.enableLooping}
 								onPressedChange={() => audioEngine.toggleLooping()}
 							>
 								<RepeatIcon />
