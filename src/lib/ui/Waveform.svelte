@@ -144,7 +144,7 @@
 <div
 	id="waveform"
 	bind:this={container}
-	class="relative transition-opacity duration-500"
+	class="relative transition-opacity duration-500 select-none"
 	class:opacity-0={audioEngine.isLoading}
 >
 	{#if children}
@@ -159,5 +159,10 @@
 		content: '▼';
 		position: absolute;
 		translate: -6.3px -10px;
+	}
+
+	:global(#waveform ::part(region-handle-right)),
+	:global(#waveform ::part(region-handle-left)) {
+		cursor: col-resize;
 	}
 </style>
