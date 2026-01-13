@@ -44,16 +44,13 @@
 
 		// Do analysis
 		audioWorker?.post({
-			type: 'pitch',
-			buffer: audioEngine.audioData ?? new Float32Array([]),
-			sampleRate: audioEngine.sampleRate
+			type: 'beat',
+			buffer: audioEngine.audioData ?? new Float32Array([])
 		});
 		audioWorker?.post({
-			type: 'beat',
-			buffer: audioEngine.audioData ?? new Float32Array([]),
-			sampleRate: audioEngine.sampleRate
+			type: 'pitch',
+			buffer: audioEngine.audioData ?? new Float32Array([])
 		});
-		console.log(analysisState.essentia);
 	};
 
 	let controlsPanel = $state<HTMLDivElement | null>(null);

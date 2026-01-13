@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { analysisState, waveformState } from '$lib/stores.svelte';
 	import audioEngine from '$lib/engine/engine.svelte';
+	import { onMount } from 'svelte';
 
 	let canvas: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D;
@@ -23,14 +24,13 @@
 	const MAX_MIDI = 96; // C7
 	const MIDI_RANGE = MAX_MIDI - MIN_MIDI;
 
-	$effect(() => {
+	function render(pitches: Float32Array) {
 		if (!canvas) return;
 		if (!ctx) ctx = canvas.getContext('2d')!;
 
 		const { width, height } = canvas;
 		ctx.clearRect(0, 0, width, height);
 
-		const pitches = analysisState.pitches;
 		if (!pitches || pitches.length === 0) return;
 
 		ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
@@ -59,14 +59,16 @@
 			// draw a small rectangle per frame
 			const frameWidth = (frameDuration / visibleDuration) * width;
 
-			ctx.fillRect(x, y - 1, Math.max(1, frameWidth), 2);
+			ctx.fillRect(x, y - 1, 1, 2);
 		}
-	});
+	}
+	onMount(() => render(analysisState.pitches));
+	$effect(() => render(analysisState.pitches));
 </script>
 
 <canvas
 	bind:this={canvas}
 	width={document.documentElement.clientWidth}
 	height={96}
-	class="pointer-events-none absolute bottom-28 w-full bg-red-500 "
+	class="pointer-events-none absolute bottom-20 w-full"
 ></canvas>
