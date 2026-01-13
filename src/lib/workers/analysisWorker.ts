@@ -1,23 +1,33 @@
 /// <reference lib="webworker" />
 
-import extractPitch from '$lib/audio/pitch';
-import extractOnset from '$lib/audio/onset';
 import type { WorkerRequest, WorkerResponse } from './types';
+import essentiajs from 'essentia.js';
+import { EssentiaWASM } from 'essentia.js/dist/essentia-wasm.es.js';
+import type EssentiaModule from 'essentia.js/dist/core_api';
+
+const essentia: EssentiaModule = new essentiajs.Essentia(EssentiaWASM);
 
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
 	const msg = e.data;
 
 	switch (msg.type) {
 		case 'pitch': {
-			const frames = extractPitch(msg.buffer, msg.sampleRate);
-			const res: WorkerResponse = { type: 'pitch', data: frames };
-			self.postMessage(res);
+			console.log('Extracting pitch...');
+			const res = essentia.PitchMelodia(essentia.arrayToVector(msg.buffer));
+			self.postMessage({
+				type: 'pitch',
+				data: essentia.vectorToArray(res.pitch)
+			} satisfies WorkerResponse);
 			break;
 		}
 
-		case 'onset': {
-			const onset = extractOnset(msg.buffer, msg.sampleRate);
-			self.postMessage({ type: 'onset', data: onset });
+		case 'beat': {
+			console.log('Extracting beats...');
+			const res = essentia.BeatTrackerDegara(essentia.arrayToVector(msg.buffer));
+			self.postMessage({
+				type: 'beat',
+				data: essentia.vectorToArray(res.ticks)
+			} satisfies WorkerResponse);
 			break;
 		}
 	}

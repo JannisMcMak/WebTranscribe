@@ -1,8 +1,9 @@
-import type { PitchFrame } from './types';
+import type Essentia from 'essentia.js/dist/core_api';
 
 export const analysisState = $state({
-	pitchTrack: <PitchFrame[]>[],
-	beats: <number[]>[],
+	essentia: <Essentia>{},
+	pitches: <Float32Array>new Float32Array([]),
+	beats: <Float32Array>new Float32Array([]),
 	bpm: <number | null>null
 });
 

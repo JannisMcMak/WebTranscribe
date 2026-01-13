@@ -29,9 +29,9 @@
 		audioWorker.onMessage((msg) => {
 			switch (msg.type) {
 				case 'pitch':
-					analysisState.pitchTrack = msg.data;
+					analysisState.pitches = msg.data;
 					break;
-				case 'onset':
+				case 'beat':
 					analysisState.beats = msg.data;
 					break;
 			}
@@ -43,16 +43,17 @@
 		await audioEngine.loadAudio(b);
 
 		// Do analysis
-		// audioWorker?.post({
-		// 	type: 'pitch',
-		// 	buffer: audioEngine.audioData ?? new Float32Array([]),
-		// 	sampleRate: audioEngine.sampleRate
-		// });
 		audioWorker?.post({
-			type: 'onset',
+			type: 'pitch',
 			buffer: audioEngine.audioData ?? new Float32Array([]),
 			sampleRate: audioEngine.sampleRate
 		});
+		audioWorker?.post({
+			type: 'beat',
+			buffer: audioEngine.audioData ?? new Float32Array([]),
+			sampleRate: audioEngine.sampleRate
+		});
+		console.log(analysisState.essentia);
 	};
 
 	let controlsPanel = $state<HTMLDivElement | null>(null);

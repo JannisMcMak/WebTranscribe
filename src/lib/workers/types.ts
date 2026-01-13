@@ -1,5 +1,3 @@
-import type { PitchFrame } from '$lib/types';
-
 export type WorkerRequest =
 	| {
 			type: 'pitch';
@@ -7,7 +5,7 @@ export type WorkerRequest =
 			sampleRate: number;
 	  }
 	| {
-			type: 'onset';
+			type: 'beat';
 			buffer: Float32Array;
 			sampleRate: number;
 	  };
@@ -15,9 +13,9 @@ export type WorkerRequest =
 export type WorkerResponse =
 	| {
 			type: 'pitch';
-			data: PitchFrame[];
+			data: Float32Array; // pitches
 	  }
 	| {
-			type: 'onset';
-			data: number[]; // onset times
+			type: 'beat';
+			data: Float32Array; // onset times
 	  };

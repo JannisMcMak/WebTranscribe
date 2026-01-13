@@ -1,144 +1,72 @@
 <script lang="ts">
-	import { analysisState } from '$lib/stores.svelte';
-	import type { PitchFrame } from '$lib/types';
+	import { analysisState, waveformState } from '$lib/stores.svelte';
+	import audioEngine from '$lib/engine/engine.svelte';
 
-	type MidiNote = {
-		note: number;
-		start: number;
-		duration: number;
-	};
+	let canvas: HTMLCanvasElement;
+	let ctx: CanvasRenderingContext2D;
 
-	function pitchFramesToMidiNotes(frames: PitchFrame[]): MidiNote[] {
-		if (frames.length === 0) return [];
-		const freqToMidi = (freq: number) => Math.round(69 + 12 * Math.log2(freq / 440));
+	const FRAME_SIZE = 2048;
 
-		const notes: MidiNote[] = [];
+	// seconds per pitch frame
+	const frameDuration = FRAME_SIZE / audioEngine.sampleRate;
 
-		let activeNote: {
-			note: number;
-			start: number;
-		} | null = null;
+	// visible time range (seconds)
+	const visibleDuration = $derived(waveformState.zoom * audioEngine.bufferDuration);
 
-		for (let i = 0; i < frames.length; i++) {
-			const frame = frames[i];
+	// convert Hz → MIDI note number
+	function hzToMidi(hz: number) {
+		return 69 + 12 * Math.log2(hz / 440);
+	}
 
-			// Silence
-			if (frame.freq == null) {
-				if (activeNote) {
-					notes.push({
-						note: activeNote.note,
-						start: activeNote.start,
-						duration: frame.time - activeNote.start
-					});
-					activeNote = null;
-				}
-				continue;
-			}
+	// piano-roll vertical range
+	const MIN_MIDI = 36; // C2
+	const MAX_MIDI = 96; // C7
+	const MIDI_RANGE = MAX_MIDI - MIN_MIDI;
 
-			const midi = freqToMidi(frame.freq);
+	$effect(() => {
+		if (!canvas) return;
+		if (!ctx) ctx = canvas.getContext('2d')!;
 
-			// Start new note
-			if (!activeNote) {
-				activeNote = {
-					note: midi,
-					start: frame.time
-				};
-				continue;
-			}
+		const { width, height } = canvas;
+		ctx.clearRect(0, 0, width, height);
 
-			// Pitch change → end previous note
-			if (midi !== activeNote.note) {
-				notes.push({
-					note: activeNote.note,
-					start: activeNote.start,
-					duration: frame.time - activeNote.start
-				});
+		const pitches = analysisState.pitches;
+		if (!pitches || pitches.length === 0) return;
 
-				activeNote = {
-					note: midi,
-					start: frame.time
-				};
-			}
+		ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
+
+		// determine visible frame indices
+		const startTime = waveformState.scrollPosition;
+		const endTime = startTime + visibleDuration;
+
+		const startFrame = Math.max(0, Math.floor(startTime / frameDuration));
+		const endFrame = Math.min(pitches.length, Math.ceil(endTime / frameDuration));
+
+		for (let i = startFrame; i < endFrame; i++) {
+			const hz = pitches[i];
+			if (!hz || !isFinite(hz)) continue;
+
+			const midi = hzToMidi(hz);
+			if (midi < MIN_MIDI || midi > MAX_MIDI) continue;
+
+			// horizontal position
+			const time = i * frameDuration - startTime;
+			const x = (time / visibleDuration) * width;
+
+			// vertical position (piano roll: high notes on top)
+			const y = height - ((midi - MIN_MIDI) / MIDI_RANGE) * height;
+
+			// draw a small rectangle per frame
+			const frameWidth = (frameDuration / visibleDuration) * width;
+
+			ctx.fillRect(x, y - 1, Math.max(1, frameWidth), 2);
 		}
-
-		// Close trailing note
-		const lastFrame = frames[frames.length - 1];
-		if (activeNote && lastFrame.freq != null) {
-			notes.push({
-				note: activeNote.note,
-				start: activeNote.start,
-				duration: lastFrame.time - activeNote.start
-			});
-		}
-
-		return notes;
-	}
-
-	let notes = $derived(pitchFramesToMidiNotes(analysisState.pitchTrack));
-
-	// Visual parameters
-	const noteHeight = 4; // px per semitone
-
-	// Compute bounds
-	const minNote = $derived(Math.min(...notes.map((n) => n.note)));
-	const maxNote = $derived(Math.max(...notes.map((n) => n.note)));
-	const totalTime = $derived(Math.max(...notes.map((n) => n.start + n.duration)));
-
-	// Normalized helpers (0–1)
-	function xFrac(time: number) {
-		return time / totalTime;
-	}
-
-	function wFrac(duration: number) {
-		return duration / totalTime;
-	}
-
-	function yFor(note: number) {
-		return (maxNote - note) * noteHeight;
-	}
+	});
 </script>
 
-{#if notes.length > 0}
-	<div class="piano-roll" style={`height: ${(maxNote - minNote + 1) * noteHeight}px;`}>
-		<!-- horizontal pitch grid -->
-		{#each Array(maxNote - minNote + 1) as _, i}
-			<div class="grid-row" style={`top: ${i * noteHeight}px`}></div>
-		{/each}
-
-		<!-- notes -->
-		{#each notes as n}
-			<div
-				class="note"
-				style={`left: ${xFrac(n.start) * 100}%; ` +
-					`top: ${yFor(n.note)}px; ` +
-					`width: ${wFrac(n.duration) * 100}%; ` +
-					`height: ${noteHeight - 2}px;`}
-				title={`MIDI ${n.note}`}
-			></div>
-		{/each}
-	</div>
-{/if}
-
-<style>
-	.piano-roll {
-		position: relative;
-		width: 100%;
-		border: 1px solid #333;
-		overflow: hidden;
-	}
-
-	.note {
-		position: absolute;
-		background: #333;
-		border-radius: 3px;
-		box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
-	}
-
-	.grid-row {
-		position: absolute;
-		left: 0;
-		right: 0;
-		height: 1px;
-		background: rgba(255, 255, 255, 0.05);
-	}
-</style>
+<canvas
+	bind:this={canvas}
+	width={document.documentElement.clientWidth}
+	height={96}
+	class="pointer-events-none absolute bottom-28 w-full bg-red-500 "
+></canvas>
