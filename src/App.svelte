@@ -53,6 +53,10 @@
 		});
 	};
 
+	let showVolumeMeter = $state(true);
+	let showBeatsOverlay = $state(false);
+	let showPitchOverlay = $state(false);
+
 	let controlsPanel = $state<HTMLDivElement | null>(null);
 	let footer = $state<HTMLDivElement | null>(null);
 	let fileInput = $state<HTMLInputElement | null>(null);
@@ -62,19 +66,33 @@
 <KeyboardShortcuts />
 <Tooltip.Provider delayDuration={400}>
 	<main class="relative flex h-screen w-screen flex-col justify-between bg-accent">
-		<ControlsPanel bind:ref={controlsPanel} />
+		<ControlsPanel
+			bind:ref={controlsPanel}
+			bind:showVolumeMeter
+			bind:showBeatsOverlay
+			bind:showPitchOverlay
+		/>
 
 		{#if audioEngine.blob}
-			<div style={`top: ${controlsPanel?.clientHeight || 0}px;`} class="absolute left-0">
-				<VolumeMeter
-					h={(innerHeight.current || 0) -
-						(controlsPanel?.clientHeight || 0) -
-						(footer?.clientHeight || 0)}
-				/>
-			</div>
+			{#if showVolumeMeter}
+				<div style={`top: ${controlsPanel?.clientHeight || 0}px;`} class="absolute left-0">
+					<VolumeMeter
+						h={(innerHeight.current || 0) -
+							(controlsPanel?.clientHeight || 0) -
+							(footer?.clientHeight || 0)}
+					/>
+				</div>
+			{/if}
 			<div class="m-12">
-				<Waveform><BeatsOverlay /></Waveform>
+				<Waveform>
+					{#if showBeatsOverlay}
+						<BeatsOverlay />
+					{/if}
+				</Waveform>
 			</div>
+			{#if showPitchOverlay}
+				<PitchPanel />
+			{/if}
 		{:else}
 			<div class="flex h-full w-full flex-col items-center justify-center space-y-2">
 				<div class="font-bold text-muted-foreground">No audio loaded</div>
@@ -103,8 +121,6 @@
 				>
 			</div>
 		{/if}
-
-		<PitchPanel />
 
 		<Footer bind:ref={footer} />
 	</main>

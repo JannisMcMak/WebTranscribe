@@ -11,6 +11,7 @@
 	import RotateCCW from '@lucide/svelte/icons/rotate-ccw';
 	import StepBack from '@lucide/svelte/icons/step-back';
 	import StepForward from '@lucide/svelte/icons/step-forward';
+	import Eye from '@lucide/svelte/icons/eye';
 	import { Button } from '$lib/components/ui/button';
 	import audioEngine, { playbackRateParam, volumeParam } from '$lib/engine/engine.svelte';
 	import ThemeButton from '$lib/components/ThemeButton.svelte';
@@ -19,12 +20,26 @@
 	import { waveformState } from '$lib/stores.svelte';
 	import { Kbd, KbdGroup } from '$lib/components/ui/kbd';
 	import { Toggle } from '$lib/components/ui/toggle';
+	import {
+		DropdownMenu,
+		DropdownMenuCheckboxItem,
+		DropdownMenuContent,
+		DropdownMenuLabel,
+		DropdownMenuSeparator,
+		DropdownMenuTrigger
+	} from '$lib/components/ui/dropdown-menu';
 	import type { ItemSize, ItemVariant } from '$lib/components/ui/item/item.svelte';
 
 	let {
-		ref = $bindable(null)
+		ref = $bindable(null),
+		showVolumeMeter = $bindable(false),
+		showBeatsOverlay = $bindable(false),
+		showPitchOverlay = $bindable(false)
 	}: {
 		ref?: HTMLDivElement | null;
+		showVolumeMeter?: boolean;
+		showBeatsOverlay?: boolean;
+		showPitchOverlay?: boolean;
 	} = $props();
 
 	const variant: ItemVariant = 'outline';
@@ -140,7 +155,6 @@
 		</Item.Root>
 
 		<!-- Playback speed -->
-		<!-- TODO block/(btn-icon)-sized slider with value label inside -->
 		<Item.Root {size} {variant}>
 			<Item.Content class="justify-betwen flex h-full flex-col">
 				<Item.Title>Playback Speed</Item.Title>
@@ -198,6 +212,31 @@
 			<Item.Content>
 				<Item.Title>View</Item.Title>
 				<Item.Description class="flex gap-2">
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<DropdownMenu>
+								<DropdownMenuTrigger>
+									<Button variant="outline" size="icon">
+										<Eye />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent>
+									<DropdownMenuLabel>Overlays</DropdownMenuLabel>
+									<DropdownMenuSeparator />
+									<DropdownMenuCheckboxItem bind:checked={showVolumeMeter}>
+										Show Volume Meter
+									</DropdownMenuCheckboxItem>
+									<DropdownMenuCheckboxItem bind:checked={showBeatsOverlay}>
+										Show Beats
+									</DropdownMenuCheckboxItem>
+									<DropdownMenuCheckboxItem bind:checked={showPitchOverlay}>
+										Show Pitches
+									</DropdownMenuCheckboxItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</Tooltip.Trigger>
+						<Tooltip.Content side="bottom">Toggle Overlays</Tooltip.Content>
+					</Tooltip.Root>
 					<Tooltip.Root>
 						<Tooltip.Trigger>
 							<Button

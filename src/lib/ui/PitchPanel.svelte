@@ -59,16 +59,19 @@
 			// draw a small rectangle per frame
 			const frameWidth = (frameDuration / visibleDuration) * width;
 
-			ctx.fillRect(x, y - 1, 1, 2);
+			ctx.fillRect(x, y - 1, frameWidth, 2);
 		}
 	}
 	onMount(() => render(analysisState.pitches));
 	$effect(() => render(analysisState.pitches));
 </script>
 
-<canvas
-	bind:this={canvas}
-	width={document.documentElement.clientWidth}
-	height={96}
-	class="pointer-events-none absolute bottom-20 w-full"
-></canvas>
+<div class="m-12 w-full">
+	<canvas
+		bind:this={canvas}
+		width={document.documentElement.clientWidth}
+		height={86}
+		class="w-full"
+	>
+	</canvas>
+</div>
