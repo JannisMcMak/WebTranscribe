@@ -6,11 +6,6 @@
 	let canvas: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D;
 
-	const FRAME_SIZE = 2048;
-
-	// seconds per pitch frame
-	const frameDuration = FRAME_SIZE / audioEngine.sampleRate;
-
 	// visible time range (seconds)
 	const visibleDuration = $derived(waveformState.zoom * audioEngine.bufferDuration);
 
@@ -27,13 +22,13 @@
 	function render(pitches: Float32Array) {
 		if (!canvas) return;
 		if (!ctx) ctx = canvas.getContext('2d')!;
+		if (!pitches || pitches.length === 0) return;
 
 		const { width, height } = canvas;
 		ctx.clearRect(0, 0, width, height);
-
-		if (!pitches || pitches.length === 0) return;
-
 		ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
+
+		const frameDuration = audioEngine.bufferDuration / pitches.length;
 
 		// determine visible frame indices
 		const startTime = waveformState.scrollPosition;
@@ -66,12 +61,7 @@
 	$effect(() => render(analysisState.pitches));
 </script>
 
-<div class="m-12 w-full">
-	<canvas
-		bind:this={canvas}
-		width={document.documentElement.clientWidth}
-		height={86}
-		class="w-full"
-	>
+<div class="m-12">
+	<canvas bind:this={canvas} width={document.documentElement.clientWidth - 2 * 48} height={86}>
 	</canvas>
 </div>
