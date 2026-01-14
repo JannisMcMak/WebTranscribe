@@ -46,7 +46,7 @@
 	const size: ItemSize = 'sm';
 </script>
 
-<Card.Root class="h-auto w-full p-4" bind:ref>
+<Card.Root class="h-auto w-full rounded-t-none p-4" bind:ref>
 	<Card.Content class="flex w-full flex-wrap gap-4 p-0">
 		<!-- Timing panel -->
 		<Item.Root {size} {variant} class="font-mono">

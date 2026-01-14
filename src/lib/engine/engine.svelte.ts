@@ -126,8 +126,19 @@ class AudioEngine {
 	get blob() {
 		return this.audioBlob;
 	}
-	get audioData() {
-		return this.buffer?.getChannelData(0) || null;
+	/** The audio data of the currently loaded audio file (Downmixed to mono if necessary). */
+	get audioData(): Float32Array {
+		if (!this.buffer) return new Float32Array([]);
+		// Return the first channel for mono signal
+		if (this.buffer.numberOfChannels === 1) return this.buffer.getChannelData(0);
+		// Downmix to mono otherwise
+		const left = this.buffer.getChannelData(0);
+		const right = this.buffer.getChannelData(1);
+		const mixed = new Float32Array(this.buffer.length);
+		for (let i = 0; i < this.buffer.length; i++) {
+			mixed[i] = (left[i] + right[i]) / 2;
+		}
+		return mixed;
 	}
 	get sampleRate() {
 		return this.buffer?.sampleRate || 0;

@@ -29,6 +29,7 @@
 
 <canvas
 	bind:this={canvas}
-	width={document.documentElement.clientWidth}
-	class="pointer-events-none absolute bottom-0 h-8 w-full"
+	width={document.documentElement.clientWidth - 2 * 48}
+	height={12}
+	class="pointer-events-none absolute bottom-4"
 ></canvas>

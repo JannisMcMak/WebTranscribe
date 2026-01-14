@@ -15,7 +15,7 @@
 	import Footer from '$lib/ui/Footer.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import Upload from '@lucide/svelte/icons/upload';
-	import { innerHeight } from 'svelte/reactivity/window';
+	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 	import VolumeMeter from '$lib/ui/VolumeMeter.svelte';
 
 	let audioWorker: ReturnType<typeof createAnalysisWorker> | null = null;
@@ -45,11 +45,11 @@
 		// Do analysis
 		audioWorker?.post({
 			type: 'beat',
-			buffer: audioEngine.audioData ?? new Float32Array([])
+			buffer: audioEngine.audioData
 		});
 		audioWorker?.post({
 			type: 'pitch',
-			buffer: audioEngine.audioData ?? new Float32Array([])
+			buffer: audioEngine.audioData
 		});
 	};
 
@@ -60,6 +60,17 @@
 	let controlsPanel = $state<HTMLDivElement | null>(null);
 	let footer = $state<HTMLDivElement | null>(null);
 	let fileInput = $state<HTMLInputElement | null>(null);
+
+	// Helpers
+	const twSpacing =
+		parseFloat(getComputedStyle(document.documentElement).fontSize) *
+		parseFloat(
+			getComputedStyle(document.documentElement).getPropertyValue('--spacing').replace('rem', '')
+		);
+	const clientWidth = $derived(innerWidth.current || 0);
+	const clientHeight = $derived(innerHeight.current || 0);
+	const controlPanelHeight = $derived(controlsPanel?.clientHeight || 0);
+	const footerHeight = $derived(footer?.clientHeight || 0);
 </script>
 
 <ModeWatcher />
@@ -75,24 +86,20 @@
 
 		{#if audioEngine.blob}
 			{#if showVolumeMeter}
-				<div style={`top: ${controlsPanel?.clientHeight || 0}px;`} class="absolute left-0">
-					<VolumeMeter
-						h={(innerHeight.current || 0) -
-							(controlsPanel?.clientHeight || 0) -
-							(footer?.clientHeight || 0)}
-					/>
+				<div style={`top: ${controlPanelHeight}px;`} class="absolute left-0">
+					<VolumeMeter h={clientHeight - controlPanelHeight - footerHeight} />
 				</div>
 			{/if}
-			<div class="m-12">
+			<div class="overflow-y-auto px-12">
 				<Waveform>
 					{#if showBeatsOverlay}
 						<BeatsOverlay />
 					{/if}
 				</Waveform>
+				{#if showPitchOverlay}
+					<PitchPanel w={clientWidth - 2 * 12 * twSpacing} />
+				{/if}
 			</div>
-			{#if showPitchOverlay}
-				<PitchPanel />
-			{/if}
 		{:else}
 			<div class="flex h-full w-full flex-col items-center justify-center space-y-2">
 				<div class="font-bold text-muted-foreground">No audio loaded</div>
