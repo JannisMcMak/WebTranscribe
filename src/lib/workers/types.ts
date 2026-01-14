@@ -11,7 +11,9 @@ export type WorkerRequest =
 export type WorkerResponse =
 	| {
 			type: 'pitch';
-			data: Float32Array; // pitches
+			pitches: Float32Array; // pitches
+			pitchesPerFrame: Int32Array; // number of pitches for each frame
+			offsets: Int32Array; // number of pitches that need to be skipped for each frame
 	  }
 	| {
 			type: 'beat';

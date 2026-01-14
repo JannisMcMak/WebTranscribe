@@ -89,12 +89,10 @@
 		);
 		container.addEventListener('mouseleave', () => (waveformState.hoverPosition = 0));
 		ws.on('zoom', () => (waveformState.zoom = getZoomLevel()));
-		ws.on(
-			'scroll',
-			() =>
-				(waveformState.scrollPosition =
-					(ws.getScroll() / ws.getWrapper().scrollWidth) * audioEngine.bufferDuration)
-		);
+		ws.on('scroll', () => {
+			waveformState.scrollPosition =
+				(ws.getScroll() / ws.getWrapper().scrollWidth) * audioEngine.bufferDuration;
+		});
 
 		// --- Regions ---
 

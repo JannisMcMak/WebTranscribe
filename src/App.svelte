@@ -29,7 +29,9 @@
 		audioWorker.onMessage((msg) => {
 			switch (msg.type) {
 				case 'pitch':
-					analysisState.pitches = msg.data;
+					analysisState.pitches = msg.pitches;
+					analysisState.pitchesPerFrame = msg.pitchesPerFrame;
+					analysisState.pitchOffsets = msg.offsets;
 					break;
 				case 'beat':
 					analysisState.beats = msg.data;

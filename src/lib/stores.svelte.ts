@@ -2,9 +2,12 @@ import type Essentia from 'essentia.js/dist/core_api';
 
 export const analysisState = $state({
 	essentia: <Essentia>{},
+
 	pitches: <Float32Array>new Float32Array([]),
-	beats: <Float32Array>new Float32Array([]),
-	bpm: <number | null>null
+	pitchesPerFrame: <Int32Array>new Int32Array([]),
+	pitchOffsets: <Int32Array>new Int32Array([]),
+
+	beats: <Float32Array>new Float32Array([])
 });
 
 export const waveformState = $state({

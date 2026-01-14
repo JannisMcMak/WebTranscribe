@@ -13,6 +13,7 @@
 			if (!hz || !isFinite(hz)) return -1;
 			const midi = 69 + 12 * Math.log2(hz / 440);
 			if (midi < MIN_MIDI || midi > MAX_MIDI) return -1;
+			if (isNaN(midi)) return -1;
 			return midi;
 		})
 	);
@@ -89,10 +90,12 @@
 		labelsCtx.stroke();
 	}
 
-	function render(pitches: Float32Array) {
+	function render(pitches: Float32Array, pitchesPerFrame: Int32Array, offsets: Int32Array) {
 		if (!canvas) return;
 		if (!ctx) ctx = canvas.getContext('2d')!;
 		if (!pitches || pitches.length === 0) return;
+
+		const numFrames = pitchesPerFrame.length;
 
 		ctx.clearRect(0, 0, w, h);
 		ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(
@@ -101,34 +104,42 @@
 
 		drawGrid();
 
-		const frameDuration = audioEngine.bufferDuration / pitches.length;
+		const frameDuration = audioEngine.bufferDuration / numFrames;
 
 		// determine visible frame indices
 		const startTime = waveformState.scrollPosition;
 		const endTime = startTime + visibleDuration;
 
 		const startFrame = Math.max(0, Math.floor(startTime / frameDuration));
-		const endFrame = Math.min(pitches.length, Math.ceil(endTime / frameDuration));
+		const endFrame = Math.min(numFrames, Math.ceil(endTime / frameDuration));
 
 		for (let i = startFrame; i < endFrame; i++) {
-			const midi = midiNotes[i];
-			if (midi < 0) continue;
+			const pitchOffset = offsets[i];
+			const numPitches = pitchesPerFrame[i];
 
-			// horizontal position
-			const time = i * frameDuration - startTime;
-			const x = (time / visibleDuration) * w;
+			const frameMidiNotes = midiNotes.slice(pitchOffset, pitchOffset + numPitches);
 
-			// vertical position (piano roll: high notes on top)
-			const y = h - ((midi - MIN_NOTE) / NOTE_RANGE) * h;
+			// Draw each note
+			frameMidiNotes.forEach((midi) => {
+				if (midi < 0) return;
 
-			// draw a small rectangle per frame
-			const frameWidth = (frameDuration / visibleDuration) * w;
+				// horizontal position
+				const time = i * frameDuration - startTime;
+				const x = (time / visibleDuration) * w;
 
-			ctx.fillRect(x, y - 1, frameWidth, NOTE_HEIGHT);
+				// vertical position (piano roll: high notes on top)
+				const y = h - ((midi - MIN_NOTE) / NOTE_RANGE) * h;
+
+				// draw a small rectangle per frame
+				const frameWidth = (frameDuration / visibleDuration) * w;
+
+				ctx.fillRect(x, y - 1, frameWidth, NOTE_HEIGHT);
+			});
 		}
 	}
-	onMount(() => render(analysisState.pitches));
-	$effect(() => render(analysisState.pitches));
+	$effect(() =>
+		render(analysisState.pitches, analysisState.pitchesPerFrame, analysisState.pitchOffsets)
+	);
 </script>
 
 <div class="relative">
