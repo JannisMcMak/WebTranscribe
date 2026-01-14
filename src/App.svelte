@@ -104,7 +104,6 @@
 			</div>
 		{:else}
 			<div class="flex h-full w-full flex-col items-center justify-center space-y-2">
-				<div class="font-bold text-muted-foreground">No audio loaded</div>
 				<input
 					class="hidden"
 					type="file"
