@@ -26,10 +26,19 @@
 	// Visible time range (seconds)
 	const visibleDuration = $derived(waveformState.zoom * audioEngine.bufferDuration);
 
+	// Vertical zoom
+	let verticalZoom = $state(1); // 1 = full range
+	let verticalCenter = $state(0.5); // normalized [0–1]
+
+	// Visible pitch range (MIDI)
+	const VISIBLE_RANGE = $derived(NOTE_RANGE / verticalZoom);
+	const MIN_VISIBLE_NOTE = $derived(MIN_NOTE + (NOTE_RANGE - VISIBLE_RANGE) * verticalCenter);
+	const MAX_VISIBLE_NOTE = $derived(MIN_VISIBLE_NOTE + VISIBLE_RANGE);
+
 	// Canvas dimensions / Sizing
 	let { w, h }: { w: number; h: number } = $props();
 	const LEGEND_WIDTH = 25;
-	const NOTE_HEIGHT = $derived(h / NOTE_RANGE);
+	const NOTE_HEIGHT = $derived(h / VISIBLE_RANGE);
 
 	// Canvas references
 	let canvas: HTMLCanvasElement;
@@ -71,8 +80,8 @@
 		labelsCtx.textAlign = 'right';
 		labelsCtx.textBaseline = 'middle';
 
-		for (let midi = MIN_NOTE; midi <= MAX_NOTE; midi++) {
-			const y = h - ((midi - MIN_NOTE) / NOTE_RANGE) * h;
+		for (let midi = MIN_VISIBLE_NOTE; midi <= MAX_VISIBLE_NOTE; midi++) {
+			const y = h - ((midi - MIN_VISIBLE_NOTE) / VISIBLE_RANGE) * h;
 
 			const isOctave = midi % 12 === 0;
 
@@ -104,12 +113,12 @@
 		labelsCtx.stroke();
 	}
 
-	function render(pitches: Float32Array, pitchesPerFrame: Int32Array, offsets: Int32Array) {
+	$effect(() => {
 		if (!canvas) return;
 		if (!ctx) ctx = canvas.getContext('2d')!;
-		if (!pitches || pitches.length === 0) return;
+		if (!analysisState.pitches || analysisState.pitches.length === 0) return;
 
-		const numFrames = pitchesPerFrame.length;
+		const numFrames = analysisState.pitchesPerFrame.length;
 
 		ctx.clearRect(0, 0, w, h);
 		ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(
@@ -128,8 +137,8 @@
 		const endFrame = Math.min(numFrames, Math.ceil(endTime / frameDuration));
 
 		for (let i = startFrame; i < endFrame; i++) {
-			const pitchOffset = offsets[i];
-			const numPitches = pitchesPerFrame[i];
+			const pitchOffset = analysisState.pitchOffsets[i];
+			const numPitches = analysisState.pitchesPerFrame[i];
 
 			const frameMidiNotes = midiNotes.slice(pitchOffset, pitchOffset + numPitches);
 
@@ -142,7 +151,7 @@
 				const x = (time / visibleDuration) * w;
 
 				// vertical position (piano roll: high notes on top)
-				const y = h - ((midi - MIN_NOTE) / NOTE_RANGE) * h;
+				const y = h - ((midi - MIN_VISIBLE_NOTE) / VISIBLE_RANGE) * h;
 
 				// draw a small rectangle per frame
 				const frameWidth = (frameDuration / visibleDuration) * w;
@@ -150,13 +159,52 @@
 				ctx.fillRect(x, y - 1, frameWidth, NOTE_HEIGHT);
 			});
 		}
+	});
+
+	function onWheel(e: WheelEvent) {
+		if (!canvas) return;
+		e.preventDefault();
+
+		const rect = canvas.getBoundingClientRect();
+		const y = e.clientY - rect.top;
+		const cursorNorm = 1 - y / h; // 0 bottom, 1 top
+
+		// ==========================
+		// PINCH → VERTICAL ZOOM
+		// ==========================
+		if (e.ctrlKey) {
+			e.preventDefault();
+
+			const zoomSpeed = 0.002;
+			const zoomDelta = Math.exp(-e.deltaY * zoomSpeed);
+
+			const newZoom = Math.min(20, Math.max(1, verticalZoom * zoomDelta));
+			if (newZoom === verticalZoom) return;
+
+			const visibleBefore = NOTE_RANGE / verticalZoom;
+			const visibleAfter = NOTE_RANGE / newZoom;
+
+			const pitchAtCursor = MIN_VISIBLE_NOTE + visibleBefore * cursorNorm;
+
+			const newMin = pitchAtCursor - visibleAfter * cursorNorm;
+
+			verticalCenter = Math.min(1, Math.max(0, (newMin - MIN_NOTE) / (NOTE_RANGE - visibleAfter)));
+
+			verticalZoom = newZoom;
+			return;
+		}
+
+		// ==========================
+		// SCROLL → VERTICAL PAN
+		// ==========================
+		const panSpeed = -0.002;
+		const delta = e.deltaY * panSpeed;
+
+		verticalCenter = Math.min(1, Math.max(0, verticalCenter + delta));
 	}
-	$effect(() =>
-		render(analysisState.pitches, analysisState.pitchesPerFrame, analysisState.pitchOffsets)
-	);
 </script>
 
-<Card.Root class="relative p-0">
+<Card.Root class="relative p-0" onwheel={onWheel}>
 	<canvas bind:this={labelsCanvas} width={50} height={h} class="absolute top-0 left-0 rounded-xl">
 	</canvas>
 	<canvas bind:this={canvas} width={w} height={h} class="rounded-xl"> </canvas>
