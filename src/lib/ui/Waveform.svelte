@@ -11,7 +11,7 @@
 	import { Spinner } from '$lib/components/ui/spinner';
 
 	interface Props {
-		h?: number;
+		h: number;
 		children?: Snippet;
 	}
 	let { h, children }: Props = $props();
@@ -29,13 +29,18 @@
 		});
 		ws = WaveSurfer.create({
 			container,
-			height: 'auto',
+			height: h,
 			waveColor: getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground'),
 			progressColor: getComputedStyle(document.documentElement).getPropertyValue(
 				'--accent-foreground'
 			),
 			cursorColor: getComputedStyle(document.documentElement).getPropertyValue('--destructive'),
-			plugins: [hoverPlugin, zoomPlugin, regionPlugin, timelinePlugin]
+			plugins: [timelinePlugin, hoverPlugin, zoomPlugin, regionPlugin]
+		});
+		
+		// Maintain height
+		$effect(() => {
+			ws.setOptions({ height: h });
 		});
 
 		// --- Helpers ---

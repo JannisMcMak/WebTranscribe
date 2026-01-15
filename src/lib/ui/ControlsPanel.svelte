@@ -15,7 +15,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import audioEngine, { playbackRateParam, volumeParam } from '$lib/engine/engine.svelte';
 	import ThemeButton from '$lib/components/ThemeButton.svelte';
-	import { formatTime } from '$lib/utils';
+	import { cn, formatTime } from '$lib/utils';
 	import { Slider } from '$lib/components/ui/slider';
 	import { waveformState } from '$lib/stores.svelte';
 	import { Kbd, KbdGroup } from '$lib/components/ui/kbd';
@@ -29,14 +29,17 @@
 		DropdownMenuTrigger
 	} from '$lib/components/ui/dropdown-menu';
 	import type { ItemSize, ItemVariant } from '$lib/components/ui/item/item.svelte';
+	import type { ClassValue } from 'clsx';
 
 	let {
 		ref = $bindable(null),
+		class: className,
 		showVolumeMeter = $bindable(false),
 		showBeatsOverlay = $bindable(false),
 		showPitchOverlay = $bindable(false)
 	}: {
 		ref?: HTMLDivElement | null;
+		class?: ClassValue;
 		showVolumeMeter?: boolean;
 		showBeatsOverlay?: boolean;
 		showPitchOverlay?: boolean;
@@ -44,12 +47,13 @@
 
 	const variant: ItemVariant = 'outline';
 	const size: ItemSize = 'sm';
+	const itemClass: ClassValue = 'p-2';
 </script>
 
-<Card.Root class="h-auto w-full rounded-t-none p-4" bind:ref>
-	<Card.Content class="flex w-full flex-wrap gap-4 p-0">
+<Card.Root class={cn(className, 'h-auto w-full rounded-t-none bg-sidebar p-2')} bind:ref>
+	<Card.Content class="flex w-full flex-wrap gap-2 p-0">
 		<!-- Timing panel -->
-		<Item.Root {size} {variant} class="font-mono">
+		<Item.Root {size} {variant} class={cn(itemClass, 'font-mono')}>
 			<div class="text-3xl font-bold">
 				{formatTime(audioEngine.bufferPosition)}
 			</div>
@@ -60,7 +64,7 @@
 		</Item.Root>
 
 		<!-- Playback controls -->
-		<Item.Root {size} {variant}>
+		<Item.Root {size} {variant} class={cn(itemClass)}>
 			<Item.Content>
 				<Item.Title>Playback</Item.Title>
 				<Item.Description class="flex gap-2">
@@ -108,7 +112,7 @@
 		</Item.Root>
 
 		<!-- Loop -->
-		<Item.Root {size} {variant}>
+		<Item.Root {size} {variant} class={cn(itemClass)}>
 			<Item.Content>
 				<Item.Title>Loop</Item.Title>
 				<Item.ItemDescription class="flex gap-2">
@@ -155,7 +159,7 @@
 		</Item.Root>
 
 		<!-- Playback speed -->
-		<Item.Root {size} {variant}>
+		<Item.Root {size} {variant} class={cn(itemClass)}>
 			<Item.Content class="justify-betwen flex h-full flex-col">
 				<Item.Title>Playback Speed</Item.Title>
 				<Item.Description class="flex items-center gap-2">
@@ -183,7 +187,7 @@
 		</Item.Root>
 
 		<!-- Volume -->
-		<Item.Root {size} {variant}>
+		<Item.Root {size} {variant} class={cn(itemClass)}>
 			<Item.Content>
 				<Item.Title>Volume</Item.Title>
 				<Tooltip.Root>
@@ -208,7 +212,7 @@
 		</Item.Root>
 
 		<!-- View -->
-		<Item.Root {size} {variant}>
+		<Item.Root {size} {variant} class={cn(itemClass)}>
 			<Item.Content>
 				<Item.Title>View</Item.Title>
 				<Item.Description class="flex gap-2">

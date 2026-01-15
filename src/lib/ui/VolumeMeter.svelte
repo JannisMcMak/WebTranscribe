@@ -68,17 +68,17 @@
 	}
 </script>
 
-<div style="height: {h}px;" class="relative ml-1.25 py-1.25">
+<div style="height: {h}px;" class="relative ml-1.25">
 	<div class="absolute top-0 -left-2.5 h-full">
 		{#each LABELS_DB as db}
 			<div
 				class="pointer-events-none absolute left-5.5 -translate-y-1/2 text-[0.6rem] text-muted-foreground select-none"
-				style="top: {dbToY(db, h) + 10}px"
+				style="top: {dbToY(db, h)}px"
 			>
 				{db}
 			</div>
 		{/each}
 	</div>
 
-	<canvas class="rounded-md bg-card" bind:this={canvas} width={w} height={h - 10}></canvas>
+	<canvas class="rounded-md bg-card" bind:this={canvas} width={w} height={h}></canvas>
 </div>

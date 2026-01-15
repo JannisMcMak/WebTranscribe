@@ -1,15 +1,19 @@
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
+	import type { ClassValue } from 'clsx';
+	import { cn } from '$lib/utils';
 
 	let {
-		ref = $bindable(null)
+		ref = $bindable(null),
+		class: className
 	}: {
 		ref?: HTMLDivElement | null;
+		class: ClassValue;
 	} = $props();
 </script>
 
-<Card.Root class="rounded-b-none p-4" bind:ref>
+<Card.Root class={cn(className, 'h-auto w-full rounded-b-none bg-sidebar p-4')} bind:ref>
 	<Card.Header class="flex items-center justify-between p-0">
 		<Card.Title class="font-bold">
 			WebTranscribe

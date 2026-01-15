@@ -82,72 +82,78 @@
 <ModeWatcher />
 <KeyboardShortcuts />
 <Tooltip.Provider delayDuration={400}>
-	<main class="relative flex h-screen w-screen flex-col justify-between bg-accent">
+	<div class="relative flex h-screen w-screen bg-accent">
 		<ControlsPanel
+			class="absolute top-0 left-0 z-40"
 			bind:ref={controlsPanel}
 			bind:showVolumeMeter
 			bind:showBeatsOverlay
 			bind:showPitchOverlay
 		/>
 
-		{#if audioEngine.blob}
-			{#if showVolumeMeter}
-				<div style={`top: ${controlPanelHeight}px;`} class="absolute left-0">
-					<VolumeMeter h={workingAreaHeight} />
+		<main
+			class="relative flex w-full items-center justify-center"
+			style="height: {workingAreaHeight}px; translate: 0 {controlPanelHeight}px"
+		>
+			{#if audioEngine.blob}
+				{#if showVolumeMeter}
+					<div class="absolute top-1/2 left-0 -translate-y-1/2">
+						<VolumeMeter h={workingAreaHeight - 2 * twSpacing * 6} />
+					</div>
+				{/if}
+				<Resizable.PaneGroup
+					onLayoutChange={(l) => {
+						layout = l;
+					}}
+					direction="vertical"
+					class="px-12 py-6"
+				>
+					<Resizable.Pane minSize={15}>
+						<Waveform h={(layout[0] / 100) * workingAreaHeight - twSpacing * 6}>
+							{#if showBeatsOverlay}
+								<BeatsOverlay />
+							{/if}
+						</Waveform>
+					</Resizable.Pane>
+					<Resizable.Handle class="mx-auto w-3/4!" withHandle />
+					<Resizable.Pane minSize={15}>
+						{#if showPitchOverlay}
+							<PitchPanel
+								w={clientWidth - 2 * 12 * twSpacing}
+								h={(layout[1] / 100) * workingAreaHeight - twSpacing * 6}
+							/>
+						{/if}
+					</Resizable.Pane>
+				</Resizable.PaneGroup>
+			{:else}
+				<div class="flex h-full w-full flex-col items-center justify-center space-y-2">
+					<input
+						class="hidden"
+						type="file"
+						accept="audio/*"
+						bind:this={fileInput}
+						onchange={() => {
+							if (!fileInput?.files) return;
+							loadAudio(fileInput.files[0]);
+						}}
+					/>
+					<Button onclick={() => fileInput?.click()}>
+						<Upload />
+						Upload File
+					</Button>
+					<Button
+						size="sm"
+						variant="ghost"
+						onclick={() => {
+							fetch('/sample.mp3')
+								.then((response) => response.blob())
+								.then(loadAudio);
+						}}>Load Sample</Button
+					>
 				</div>
 			{/if}
-			<Resizable.PaneGroup
-				onLayoutChange={(l) => {
-					layout = l;
-				}}
-				direction="vertical"
-				class="px-12"
-			>
-				<Resizable.Pane minSize={15}>
-					<Waveform h={(layout[0] / 100) * workingAreaHeight}>
-						{#if showBeatsOverlay}
-							<BeatsOverlay />
-						{/if}
-					</Waveform>
-				</Resizable.Pane>
-				<Resizable.Handle class="mx-auto w-3/4!" withHandle />
-				<Resizable.Pane minSize={15}>
-					{#if showPitchOverlay}
-						<PitchPanel
-							w={clientWidth - 2 * 12 * twSpacing}
-							h={(layout[1] / 100) * workingAreaHeight}
-						/>
-					{/if}
-				</Resizable.Pane>
-			</Resizable.PaneGroup>
-		{:else}
-			<div class="flex h-full w-full flex-col items-center justify-center space-y-2">
-				<input
-					class="hidden"
-					type="file"
-					accept="audio/*"
-					bind:this={fileInput}
-					onchange={() => {
-						if (!fileInput?.files) return;
-						loadAudio(fileInput.files[0]);
-					}}
-				/>
-				<Button onclick={() => fileInput?.click()}>
-					<Upload />
-					Upload File
-				</Button>
-				<Button
-					size="sm"
-					variant="ghost"
-					onclick={() => {
-						fetch('/sample.mp3')
-							.then((response) => response.blob())
-							.then(loadAudio);
-					}}>Load Sample</Button
-				>
-			</div>
-		{/if}
+		</main>
 
-		<Footer bind:ref={footer} />
-	</main>
+		<Footer class="absolute bottom-0 left-0 z-40" bind:ref={footer} />
+	</div>
 </Tooltip.Provider>
