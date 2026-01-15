@@ -76,7 +76,7 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
 		case 'beat': {
 			const startTime = new Date();
 			console.log('Extracting beats...');
-			const res = essentia.BeatTrackerDegara(essentia.arrayToVector(msg.buffer));
+			const res = essentia.RhythmExtractor2013(essentia.arrayToVector(msg.buffer));
 			console.log(
 				'Beats extraction finished in',
 				new Date().getTime() - startTime.getTime() + 'ms'

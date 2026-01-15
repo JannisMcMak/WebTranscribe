@@ -27,7 +27,7 @@
 	const visibleDuration = $derived(waveformState.zoom * audioEngine.bufferDuration);
 
 	// Vertical zoom
-	let verticalZoom = $state(1); // 1 = full range
+	let verticalZoom = $state(2); // 1 = full range
 	let verticalCenter = $state(0.5); // normalized [0–1]
 
 	// Visible pitch range (MIDI)
@@ -48,24 +48,10 @@
 
 	// Note labels
 	const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
-	const VISISBLE_NOTE_LABELS = [
-		true,
-		false,
-		true,
-		false,
-		true,
-		true,
-		false,
-		true,
-		false,
-		true,
-		false,
-		true
-	];
+
 	function midiToNoteName(midi: number) {
 		midi = Math.round(midi);
 		const pitchClassIndex = ((midi % 12) + 12) % 12;
-		if (!VISISBLE_NOTE_LABELS[pitchClassIndex]) return '';
 		const octave = Math.floor(midi / 12) - 1;
 		return `${NOTE_NAMES[pitchClassIndex]}${octave}`;
 	}
@@ -100,7 +86,7 @@
 			labelsCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(
 				'--accent-foreground'
 			);
-			labelsCtx.fillText(midiToNoteName(midi), LEGEND_WIDTH - 4, y);
+			labelsCtx.fillText(midiToNoteName(midi), LEGEND_WIDTH - 4, y + NOTE_HEIGHT / 2);
 		}
 
 		// vertical separator

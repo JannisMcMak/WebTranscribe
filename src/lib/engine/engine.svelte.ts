@@ -100,7 +100,11 @@ class AudioEngine {
 	readonly playbackPosition = $derived.by(() => this.bufferPosition / this.playbackRate);
 
 	constructor() {
-		this.ctx = new AudioContext();
+		// Fix sample to 44.1kHz, because it is common and expected by most audio processing tools/libraries (including Essentia).
+		// https://github.com/MTG/essentia.js/issues/88#issuecomment-1025678132
+		// WebAudio API uses the native sample rate of the device's audio hardware by default, which may be different.
+		this.ctx = new AudioContext({ sampleRate: 44100 });
+
 		this.gainNode = this.ctx.createGain();
 		getPitchshiftNode(this.ctx).then((node) => {
 			this.pitchshiftNode = node;
