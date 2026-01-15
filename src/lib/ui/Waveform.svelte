@@ -11,9 +11,10 @@
 	import { Spinner } from '$lib/components/ui/spinner';
 
 	interface Props {
+		h?: number;
 		children?: Snippet;
 	}
-	let { children }: Props = $props();
+	let { h, children }: Props = $props();
 
 	let container: HTMLDivElement;
 	let ws: WaveSurfer;
@@ -28,7 +29,7 @@
 		});
 		ws = WaveSurfer.create({
 			container,
-			height: 240,
+			height: 'auto',
 			waveColor: getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground'),
 			progressColor: getComputedStyle(document.documentElement).getPropertyValue(
 				'--accent-foreground'
@@ -129,6 +130,12 @@
 					r.setOptions({ color: '#71717b26' });
 				});
 		});
+
+		// Rerender on layout/height change
+		$effect(() => {
+			h;
+			ws.getRenderer().reRender();
+		});
 	});
 
 	onDestroy(() => ws?.destroy());
@@ -142,7 +149,7 @@
 <div
 	id="waveform"
 	bind:this={container}
-	class="relative transition-opacity duration-500 select-none"
+	class="relative h-full transition-opacity duration-500 select-none"
 	class:opacity-0={audioEngine.isLoading}
 >
 	{#if children}

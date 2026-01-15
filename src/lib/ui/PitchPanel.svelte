@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { analysisState, waveformState } from '$lib/stores.svelte';
 	import audioEngine from '$lib/engine/engine.svelte';
-	import { onMount } from 'svelte';
+	import * as Card from '$lib/components/ui/card';
 
 	// MIDI vertical range
 	const MIN_MIDI = 36; // C2
@@ -27,8 +27,7 @@
 	const visibleDuration = $derived(waveformState.zoom * audioEngine.bufferDuration);
 
 	// Canvas dimensions / Sizing
-	let { w }: { w: number } = $props();
-	const h = 400;
+	let { w, h }: { w: number; h: number } = $props();
 	const LEGEND_WIDTH = 25;
 	const NOTE_HEIGHT = $derived(h / NOTE_RANGE);
 
@@ -40,9 +39,24 @@
 
 	// Note labels
 	const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+	const VISISBLE_NOTE_LABELS = [
+		true,
+		false,
+		true,
+		false,
+		true,
+		true,
+		false,
+		true,
+		false,
+		true,
+		false,
+		true
+	];
 	function midiToNoteName(midi: number) {
 		midi = Math.round(midi);
 		const pitchClassIndex = ((midi % 12) + 12) % 12;
+		if (!VISISBLE_NOTE_LABELS[pitchClassIndex]) return '';
 		const octave = Math.floor(midi / 12) - 1;
 		return `${NOTE_NAMES[pitchClassIndex]}${octave}`;
 	}
@@ -142,7 +156,8 @@
 	);
 </script>
 
-<div class="relative">
-	<canvas bind:this={labelsCanvas} width={50} height={h} class="absolute top-0 left-0"> </canvas>
-	<canvas bind:this={canvas} width={w} height={h}> </canvas>
-</div>
+<Card.Root class="relative p-0">
+	<canvas bind:this={labelsCanvas} width={50} height={h} class="absolute top-0 left-0 rounded-xl">
+	</canvas>
+	<canvas bind:this={canvas} width={w} height={h} class="rounded-xl"> </canvas>
+</Card.Root>

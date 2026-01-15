@@ -10,6 +10,7 @@
 	import { initWasm, foo } from '$lib/wasm';
 	import audioEngine from '$lib/engine/engine.svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip';
+	import * as Resizable from '$lib/components/ui/resizable';
 	import { ModeWatcher } from 'mode-watcher';
 	import KeyboardShortcuts from '$lib/ui/KeyboardShortcuts.svelte';
 	import Footer from '$lib/ui/Footer.svelte';
@@ -55,6 +56,8 @@
 		});
 	};
 
+	let layout: number[] = $state([0.5, 0.5]);
+
 	let showVolumeMeter = $state(true);
 	let showBeatsOverlay = $state(false);
 	let showPitchOverlay = $state(false);
@@ -73,6 +76,7 @@
 	const clientHeight = $derived(innerHeight.current || 0);
 	const controlPanelHeight = $derived(controlsPanel?.clientHeight || 0);
 	const footerHeight = $derived(footer?.clientHeight || 0);
+	const workingAreaHeight = $derived(clientHeight - controlPanelHeight - footerHeight || 0);
 </script>
 
 <ModeWatcher />
@@ -89,19 +93,33 @@
 		{#if audioEngine.blob}
 			{#if showVolumeMeter}
 				<div style={`top: ${controlPanelHeight}px;`} class="absolute left-0">
-					<VolumeMeter h={clientHeight - controlPanelHeight - footerHeight} />
+					<VolumeMeter h={workingAreaHeight} />
 				</div>
 			{/if}
-			<div class="overflow-y-auto px-12">
-				<Waveform>
-					{#if showBeatsOverlay}
-						<BeatsOverlay />
+			<Resizable.PaneGroup
+				onLayoutChange={(l) => {
+					layout = l;
+				}}
+				direction="vertical"
+				class="px-12"
+			>
+				<Resizable.Pane minSize={15}>
+					<Waveform h={(layout[0] / 100) * workingAreaHeight}>
+						{#if showBeatsOverlay}
+							<BeatsOverlay />
+						{/if}
+					</Waveform>
+				</Resizable.Pane>
+				<Resizable.Handle class="mx-auto w-3/4!" withHandle />
+				<Resizable.Pane minSize={15}>
+					{#if showPitchOverlay}
+						<PitchPanel
+							w={clientWidth - 2 * 12 * twSpacing}
+							h={(layout[1] / 100) * workingAreaHeight}
+						/>
 					{/if}
-				</Waveform>
-				{#if showPitchOverlay}
-					<PitchPanel w={clientWidth - 2 * 12 * twSpacing} />
-				{/if}
-			</div>
+				</Resizable.Pane>
+			</Resizable.PaneGroup>
 		{:else}
 			<div class="flex h-full w-full flex-col items-center justify-center space-y-2">
 				<input
