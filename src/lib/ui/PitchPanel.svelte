@@ -27,7 +27,9 @@
 
 	// Visible pitch range (MIDI)
 	const VISIBLE_RANGE = $derived(NOTE_RANGE / verticalZoom);
-	const MIN_VISIBLE_NOTE = $derived(MIN_NOTE + (NOTE_RANGE - VISIBLE_RANGE) * verticalCenter);
+	const MIN_VISIBLE_NOTE = $derived(
+		Math.floor(MIN_NOTE + (NOTE_RANGE - VISIBLE_RANGE) * verticalCenter)
+	);
 	const MAX_VISIBLE_NOTE = $derived(MIN_VISIBLE_NOTE + VISIBLE_RANGE);
 
 	// Canvas dimensions / Sizing
@@ -146,42 +148,18 @@
 		if (!canvas) return;
 		e.preventDefault();
 
-		const rect = canvas.getBoundingClientRect();
-		const y = e.clientY - rect.top;
-		const cursorNorm = 1 - y / h; // 0 bottom, 1 top
-
-		// ==========================
-		// PINCH → VERTICAL ZOOM
-		// ==========================
 		if (e.ctrlKey) {
-			e.preventDefault();
-
+			// PINCH → VERTICAL ZOOM
 			const zoomSpeed = 0.002;
 			const zoomDelta = Math.exp(-e.deltaY * zoomSpeed);
-
 			const newZoom = Math.min(20, Math.max(1, verticalZoom * zoomDelta));
 			if (newZoom === verticalZoom) return;
-
-			const visibleBefore = NOTE_RANGE / verticalZoom;
-			const visibleAfter = NOTE_RANGE / newZoom;
-
-			const pitchAtCursor = MIN_VISIBLE_NOTE + visibleBefore * cursorNorm;
-
-			const newMin = pitchAtCursor - visibleAfter * cursorNorm;
-
-			verticalCenter = Math.min(1, Math.max(0, (newMin - MIN_NOTE) / (NOTE_RANGE - visibleAfter)));
-
 			verticalZoom = newZoom;
-			return;
+		} else {
+			// SCROLL → VERTICAL PAN
+			const panSpeed = -0.002;
+			verticalCenter = Math.min(1, Math.max(0, verticalCenter + e.deltaY * panSpeed));
 		}
-
-		// ==========================
-		// SCROLL → VERTICAL PAN
-		// ==========================
-		const panSpeed = -0.002;
-		const delta = e.deltaY * panSpeed;
-
-		verticalCenter = Math.min(1, Math.max(0, verticalCenter + delta));
 	}
 </script>
 
