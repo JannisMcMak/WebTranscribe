@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { analysisState, waveformState } from '$lib/stores.svelte';
 	import audioEngine from '$lib/engine/engine.svelte';
+	import { TW_SPACING } from '$lib/utils';
 
 	// Pitch data
 	const midiNotes = $derived(
@@ -32,68 +33,41 @@
 	);
 	const MAX_VISIBLE_NOTE = $derived(MIN_VISIBLE_NOTE + VISIBLE_RANGE);
 
-	// Canvas dimensions / Sizing
+	// Canvas dimensions / sizing
 	let { w, h }: { w: number; h: number } = $props();
-	const LEGEND_WIDTH = 25;
 	const NOTE_HEIGHT = $derived(h / VISIBLE_RANGE);
 
-	// Canvas references
+	// References
 	let canvas: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D;
-	let labelsCanvas: HTMLCanvasElement;
-	let labelsCtx: CanvasRenderingContext2D;
+	let pianoRoll: HTMLDivElement;
 
-	// Note labels
-	const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
-
-	function midiToNoteName(midi: number) {
-		midi = Math.round(midi);
-		const pitchClassIndex = ((midi % 12) + 12) % 12;
-		const octave = Math.floor(midi / 12) - 1;
-		return `${NOTE_NAMES[pitchClassIndex]}${octave}`;
+	// Note UI
+	function isMidiKeyBlack(midi: number) {
+		return [1, 3, 6, 8, 10].includes(midi % 12);
 	}
 
 	function drawGrid() {
-		if (!labelsCanvas) return;
-		if (!labelsCtx) labelsCtx = labelsCanvas.getContext('2d')!;
-
-		labelsCtx.clearRect(0, 0, LEGEND_WIDTH, h);
-
-		labelsCtx.font = '11px system-ui';
-		labelsCtx.textAlign = 'right';
-		labelsCtx.textBaseline = 'middle';
-
 		for (let midi = MIN_VISIBLE_NOTE; midi <= MAX_VISIBLE_NOTE; midi++) {
 			const y = h - ((midi - MIN_VISIBLE_NOTE) / VISIBLE_RANGE) * h;
 
-			const isOctave = midi % 12 === 0;
+			const isOctave = midi % 12 === 11;
 
 			// horizontal line
 			ctx.strokeStyle = isOctave
 				? getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground')
-				: getComputedStyle(document.documentElement).getPropertyValue('--ring');
-			ctx.lineWidth = isOctave ? 1.5 : 1;
-
+				: getComputedStyle(document.documentElement).getPropertyValue('--muted');
 			ctx.beginPath();
 			ctx.moveTo(0, y);
 			ctx.lineTo(w, y);
 			ctx.stroke();
 
-			// note labels (only once per pitch class, e.g. C, D, E…)
-			labelsCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(
-				'--accent-foreground'
-			);
-			labelsCtx.fillText(midiToNoteName(midi), LEGEND_WIDTH - 4, y + NOTE_HEIGHT / 2);
+			// fill black keys
+			if (isMidiKeyBlack(midi)) {
+				ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+				ctx.fillRect(0, y, w, NOTE_HEIGHT);
+			}
 		}
-
-		// vertical separator
-		labelsCtx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue(
-			'--accent-foreground'
-		);
-		labelsCtx.beginPath();
-		labelsCtx.moveTo(LEGEND_WIDTH, 0);
-		labelsCtx.lineTo(LEGEND_WIDTH, h);
-		labelsCtx.stroke();
 	}
 
 	$effect(() => {
@@ -104,11 +78,8 @@
 		const numFrames = analysisState.pitchesPerFrame.length;
 
 		ctx.clearRect(0, 0, w, h);
-		ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(
-			'--accent-foreground'
-		);
-
 		drawGrid();
+		ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
 
 		const frameDuration = audioEngine.bufferDuration / numFrames;
 
@@ -161,10 +132,85 @@
 			verticalCenter = Math.min(1, Math.max(0, verticalCenter + e.deltaY * panSpeed));
 		}
 	}
+
+	let pianoRollPressed = $state(false);
+	let currentHoveredMidi = $state(-1);
+	$inspect(pianoRollPressed, currentHoveredMidi);
 </script>
 
-<div onwheel={onWheel} class="relative py-1">
-	<canvas bind:this={labelsCanvas} width={50} height={h} class="absolute top-0 left-0 rounded-xl">
+<div onwheel={onWheel} class="relative flex rounded-xl bg-card">
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<!-- TODO played tone vs. hovered tone is slightly off + make this more maintainable -->
+	<div
+		bind:this={pianoRoll}
+		class="relative h-full w-16 overflow-hidden rounded-l-xl bg-white select-none"
+		onmousedown={(e) => {
+			pianoRollPressed = true;
+			const offsetY = e.clientY - pianoRoll.getBoundingClientRect().top;
+			const midi = MIN_VISIBLE_NOTE + Math.round((h - offsetY) / NOTE_HEIGHT);
+			const freq = (440 / 32) * 2 ** ((midi - 9) / 12);
+			audioEngine.playNote(freq);
+			currentHoveredMidi = midi;
+		}}
+		onmouseup={() => {
+			audioEngine.stopTone();
+			pianoRollPressed = false;
+			currentHoveredMidi = -1;
+		}}
+		onmousemove={(e) => {
+			if (!pianoRollPressed) return;
+			const offsetY = e.clientY - pianoRoll.getBoundingClientRect().top;
+			const midi = MIN_VISIBLE_NOTE + Math.round((h - offsetY) / NOTE_HEIGHT);
+			if (midi !== currentHoveredMidi) {
+				const freq = (440 / 32) * 2 ** ((midi - 9) / 12);
+				audioEngine.playNote(freq);
+				currentHoveredMidi = midi;
+			}
+		}}
+		onmouseleave={() => {
+			audioEngine.stopTone();
+			pianoRollPressed = false;
+			currentHoveredMidi = -1;
+		}}
+	>
+		{#each Array(Math.ceil(VISIBLE_RANGE)) as _, i}
+			{@const midi = MIN_VISIBLE_NOTE + i}
+			{@const pitchClassIndex = ((midi % 12) + 12) % 12}
+			{@const octave = Math.floor(midi / 12) - 1}
+			{@const isBlack = isMidiKeyBlack(midi)}
+			<div
+				class="absolute right-0 flex cursor-pointer items-center justify-end"
+				class:black={isBlack}
+				class:white={!isBlack}
+				class:hover:opacity-50={isBlack}
+				class:hover:brightness-90={!isBlack}
+				style="
+					top: {h - (midi - MIN_VISIBLE_NOTE) * NOTE_HEIGHT}px;
+					height: {NOTE_HEIGHT}px;
+				"
+			>
+				{#if pitchClassIndex === 0}
+					<span class="text-[8px] leading-0">C{octave}</span>
+				{/if}
+			</div>
+		{/each}
+	</div>
+
+	<canvas bind:this={canvas} width={w - TW_SPACING * 16} height={h} class="flex-1 rounded-r-xl">
 	</canvas>
-	<canvas bind:this={canvas} width={w} height={h} class="rounded-xl"> </canvas>
 </div>
+
+<style>
+	.white {
+		width: 100%;
+		background: white;
+		z-index: 1;
+	}
+
+	.black {
+		width: 60%;
+		background: black;
+		left: 0;
+		z-index: 2;
+	}
+</style>

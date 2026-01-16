@@ -32,6 +32,7 @@ class AudioEngine {
 	private sourceNode: AudioBufferSourceNode | null = null;
 	private gainNode: GainNode;
 	private pitchshiftNode: Awaited<ReturnType<typeof getPitchshiftNode>> | null = null;
+	private oscillatorNode: OscillatorNode | null = null;
 
 	private analyzer: AnalyserNode;
 	private analyzerData: Float32Array;
@@ -433,6 +434,22 @@ class AudioEngine {
 			this.enableLooping = !this.enableLooping;
 			if (this.enableLooping) this.offset = (this.loopMarkers?.start || 0) / this.playbackRate;
 		});
+	}
+
+	// Tone generation
+
+	playNote(frequency: number) {
+		if (this.oscillatorNode) this.oscillatorNode.stop();
+		this.oscillatorNode = this.ctx.createOscillator();
+		this.oscillatorNode.frequency.value = frequency;
+		const gain = this.ctx.createGain();
+		gain.gain.value = this.volume / 2;
+		this.oscillatorNode.connect(gain).connect(this.ctx.destination);
+		this.oscillatorNode.start();
+	}
+	stopTone() {
+		this.oscillatorNode?.stop();
+		this.oscillatorNode = null;
 	}
 }
 const audioEngine = new AudioEngine();
