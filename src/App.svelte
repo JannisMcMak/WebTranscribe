@@ -9,6 +9,7 @@
 	import createAnalysisWorker from '$lib/workers';
 	import { initWasm, foo } from '$lib/wasm';
 	import audioEngine from '$lib/engine/engine.svelte';
+	import * as Card from '$lib/components/ui/card';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import * as Resizable from '$lib/components/ui/resizable';
 	import { ModeWatcher } from 'mode-watcher';
@@ -16,8 +17,11 @@
 	import Footer from '$lib/ui/Footer.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import Upload from '@lucide/svelte/icons/upload';
+	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 	import VolumeMeter from '$lib/ui/VolumeMeter.svelte';
+	import { Spinner } from '$lib/components/ui/spinner';
+	import { TW_SPACING } from '$lib/utils';
 
 	let audioWorker: ReturnType<typeof createAnalysisWorker> | null = null;
 
@@ -33,9 +37,11 @@
 					analysisState.pitches = msg.pitches;
 					analysisState.pitchesPerFrame = msg.pitchesPerFrame;
 					analysisState.pitchOffsets = msg.offsets;
+					analysisState.pitchesLoading = false;
 					break;
 				case 'beat':
 					analysisState.beats = msg.data;
+					analysisState.beatsLoading = false;
 					break;
 			}
 		});
@@ -46,10 +52,14 @@
 		await audioEngine.loadAudio(b);
 
 		// Do analysis
+		analysisState.beatsLoading = true;
 		audioWorker?.post({
 			type: 'beat',
 			buffer: audioEngine.audioData
 		});
+	};
+	const doPitchAnalysis = () => {
+		analysisState.pitchesLoading = true;
 		audioWorker?.post({
 			type: 'pitch',
 			buffer: audioEngine.audioData
@@ -60,18 +70,13 @@
 
 	let showVolumeMeter = $state(true);
 	let showBeatsOverlay = $state(false);
-	let showPitchOverlay = $state(false);
+	let showPitchOverlay = $state(true);
 
 	let controlsPanel = $state<HTMLDivElement | null>(null);
 	let footer = $state<HTMLDivElement | null>(null);
 	let fileInput = $state<HTMLInputElement | null>(null);
 
 	// Helpers
-	const twSpacing =
-		parseFloat(getComputedStyle(document.documentElement).fontSize) *
-		parseFloat(
-			getComputedStyle(document.documentElement).getPropertyValue('--spacing').replace('rem', '')
-		);
 	const clientWidth = $derived(innerWidth.current || 0);
 	const clientHeight = $derived(innerHeight.current || 0);
 	const controlPanelHeight = $derived(controlsPanel?.clientHeight || 0);
@@ -98,7 +103,7 @@
 			{#if audioEngine.blob}
 				{#if showVolumeMeter}
 					<div class="absolute top-1/2 left-0 -translate-y-1/2">
-						<VolumeMeter h={workingAreaHeight - 2 * twSpacing * 6} />
+						<VolumeMeter h={workingAreaHeight - 2 * TW_SPACING * 6} />
 					</div>
 				{/if}
 				<Resizable.PaneGroup
@@ -109,21 +114,39 @@
 					class="px-12 py-6"
 				>
 					<Resizable.Pane minSize={15}>
-						<Waveform h={(layout[0] / 100) * workingAreaHeight - twSpacing * 6}>
+						<Waveform
+							w={clientWidth - 2 * 12 * TW_SPACING}
+							h={(layout[0] / 100) * workingAreaHeight - TW_SPACING * 6}
+						>
 							{#if showBeatsOverlay}
 								<BeatsOverlay />
 							{/if}
 						</Waveform>
 					</Resizable.Pane>
-					<Resizable.Handle class="mx-auto w-3/4!" withHandle />
-					<Resizable.Pane minSize={15}>
-						{#if showPitchOverlay}
-							<PitchPanel
-								w={clientWidth - 2 * 12 * twSpacing}
-								h={(layout[1] / 100) * workingAreaHeight - twSpacing * 6}
-							/>
-						{/if}
-					</Resizable.Pane>
+
+					{#if showPitchOverlay}
+						<Resizable.Handle class="mx-auto w-3/4!" withHandle />
+					{/if}
+
+					{#if showPitchOverlay}
+						<Resizable.Pane defaultSize={70} minSize={15}>
+							<Card.Root class="flex h-full w-full items-center justify-center">
+								{#if !!analysisState.pitches.length}
+									<PitchPanel
+										w={clientWidth - 2 * 12 * TW_SPACING}
+										h={(layout[1] / 100) * workingAreaHeight - TW_SPACING * 6}
+									/>
+								{:else if analysisState.pitchesLoading}
+									<Spinner />
+								{:else}
+									<Button onclick={doPitchAnalysis}>
+										<Sparkles />
+										Estimate Pitches
+									</Button>
+								{/if}
+							</Card.Root>
+						</Resizable.Pane>
+					{/if}
 				</Resizable.PaneGroup>
 			{:else}
 				<div class="flex h-full w-full flex-col items-center justify-center space-y-2">
@@ -139,7 +162,7 @@
 					/>
 					<Button onclick={() => fileInput?.click()}>
 						<Upload />
-						Upload File
+						Load File
 					</Button>
 					<Button
 						size="sm"

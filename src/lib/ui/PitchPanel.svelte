@@ -1,27 +1,17 @@
 <script lang="ts">
 	import { analysisState, waveformState } from '$lib/stores.svelte';
 	import audioEngine from '$lib/engine/engine.svelte';
-	import * as Card from '$lib/components/ui/card';
-
-	// MIDI vertical range
-	const MIN_MIDI = 36; // C2
-	const MAX_MIDI = 96; // C7
 
 	// Pitch data
 	const midiNotes = $derived(
 		analysisState.pitches.map((hz) => {
 			if (!hz || !isFinite(hz)) return -1;
 			const midi = 69 + 12 * Math.log2(hz / 440);
-			if (midi < MIN_MIDI || midi > MAX_MIDI) return -1;
+			if (midi < MIN_NOTE || midi > MAX_NOTE) return -1;
 			if (isNaN(midi)) return -1;
 			return midi;
 		})
 	);
-
-	// Pitch data vertical range
-	const MIN_NOTE = $derived(Math.min(...midiNotes.filter((n) => n >= 0)));
-	const MAX_NOTE = $derived(Math.max(...midiNotes));
-	const NOTE_RANGE = $derived(MAX_NOTE - MIN_NOTE);
 
 	// Visible time range (seconds)
 	const visibleDuration = $derived(waveformState.zoom * audioEngine.bufferDuration);
@@ -29,6 +19,11 @@
 	// Vertical zoom
 	let verticalZoom = $state(2); // 1 = full range
 	let verticalCenter = $state(0.5); // normalized [0–1]
+
+	// MIDI vertical range
+	const MIN_NOTE = 36; // C2
+	const MAX_NOTE = 96; // C7
+	const NOTE_RANGE = $derived(MAX_NOTE - MIN_NOTE);
 
 	// Visible pitch range (MIDI)
 	const VISIBLE_RANGE = $derived(NOTE_RANGE / verticalZoom);
@@ -190,8 +185,8 @@
 	}
 </script>
 
-<Card.Root class="relative p-0" onwheel={onWheel}>
+<div onwheel={onWheel} class="relative py-1">
 	<canvas bind:this={labelsCanvas} width={50} height={h} class="absolute top-0 left-0 rounded-xl">
 	</canvas>
 	<canvas bind:this={canvas} width={w} height={h} class="rounded-xl"> </canvas>
-</Card.Root>
+</div>

@@ -3,10 +3,12 @@ import type Essentia from 'essentia.js/dist/core_api';
 export const analysisState = $state({
 	essentia: <Essentia>{},
 
+	pitchesLoading: false,
 	pitches: <Float32Array>new Float32Array([]),
 	pitchesPerFrame: <Int32Array>new Int32Array([]),
 	pitchOffsets: <Int32Array>new Int32Array([]),
 
+	beatsLoading: false,
 	beats: <Float32Array>new Float32Array([])
 });
 

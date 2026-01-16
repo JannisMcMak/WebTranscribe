@@ -1,6 +1,12 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+export const TW_SPACING =
+	parseFloat(getComputedStyle(document.documentElement).fontSize) *
+	parseFloat(
+		getComputedStyle(document.documentElement).getPropertyValue('--spacing').replace('rem', '')
+	);
+
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }

@@ -7,14 +7,21 @@
 	import { onMount, onDestroy, type Snippet } from 'svelte';
 	import audioEngine from '$lib/engine/engine.svelte';
 	import { waveformState } from '$lib/stores.svelte';
-	import { formatTime } from '$lib/utils';
+	import { formatTime, TW_SPACING } from '$lib/utils';
 	import { Spinner } from '$lib/components/ui/spinner';
+	import { Button } from '$lib/components/ui/button';
+	import * as Tooltip from '$lib/components/ui/tooltip';
+	import ZoomIn from '@lucide/svelte/icons/zoom-in';
+	import ZoomOut from '@lucide/svelte/icons/zoom-out';
+	import ScanSearch from '@lucide/svelte/icons/scan-search';
+	import UnfoldHorizontal from '@lucide/svelte/icons/unfold-horizontal';
 
 	interface Props {
+		w: number;
 		h: number;
 		children?: Snippet;
 	}
-	let { h, children }: Props = $props();
+	let { w, h, children }: Props = $props();
 
 	let container: HTMLDivElement;
 	let ws: WaveSurfer;
@@ -29,7 +36,7 @@
 		});
 		ws = WaveSurfer.create({
 			container,
-			height: h,
+			height: h - TW_SPACING * 4, // Allow space for scrollbar
 			waveColor: getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground'),
 			progressColor: getComputedStyle(document.documentElement).getPropertyValue(
 				'--accent-foreground'
@@ -37,17 +44,6 @@
 			cursorColor: getComputedStyle(document.documentElement).getPropertyValue('--destructive'),
 			plugins: [timelinePlugin, hoverPlugin, zoomPlugin, regionPlugin]
 		});
-		
-		// Maintain height
-		$effect(() => {
-			ws.setOptions({ height: h });
-		});
-
-		// --- Helpers ---
-		const getZoomLevel = () => {
-			// Fraction of the total duration that is visible
-			return ws.getWidth() / ws.getWrapper().scrollWidth;
-		};
 
 		// --- Sync to/from custom audio engine ---
 
@@ -73,28 +69,17 @@
 			audioEngine.seekTo(playbackTime);
 		});
 
-		// --- Sync to global waveform store ---
+		// --- Sync state variables to global waveform store ---
 
-		// Register global actions
-		waveformState.centerToPlayhead = () => {
-			const zoom = getZoomLevel();
-			if (zoom === 1) return; // Return early if the waveform is fully zoomed out
-			// Number of seconds that are visible
-			const visibleTime = ws.getDuration() * zoom;
-			ws.setScrollTime(ws.getCurrentTime() - visibleTime / 2);
-		};
-		waveformState.resetZoom = () => {
-			ws.zoom(1);
-			ws.setScrollTime(0);
-		};
-
-		// Sync state variables
+		// Hover position
 		hoverPlugin.on(
 			'hover',
 			(relX) => (waveformState.hoverPosition = relX * audioEngine.bufferDuration)
 		);
 		container.addEventListener('mouseleave', () => (waveformState.hoverPosition = 0));
+		// Zoom level
 		ws.on('zoom', () => (waveformState.zoom = getZoomLevel()));
+		// Scroll position
 		ws.on('scroll', () => {
 			waveformState.scrollPosition =
 				(ws.getScroll() / ws.getWrapper().scrollWidth) * audioEngine.bufferDuration;
@@ -136,33 +121,98 @@
 				});
 		});
 
-		// Rerender on layout/height change
-		$effect(() => {
-			h;
-			ws.getRenderer().reRender();
-		});
+		onDestroy(() => ws?.destroy());
 	});
 
-	onDestroy(() => ws?.destroy());
+	// Maintain height
+	$effect(() => {
+		ws.setOptions({ height: h - TW_SPACING * 4 });
+	});
+
+	// --- Helpers ---
+	const getZoomLevel = () => {
+		// Fraction of the total duration that is visible
+		return ws.getWidth() / ws.getWrapper().scrollWidth;
+	};
+
+	// --- Actions ---
+	const zoomIn = () => {
+		const oldPxPerSec = ws.getWidth() / (getZoomLevel() * audioEngine.bufferDuration);
+		ws.zoom(oldPxPerSec * 1.2);
+	};
+	const zoomOut = () => {
+		const oldPxPerSec = ws.getWidth() / (getZoomLevel() * audioEngine.bufferDuration);
+		ws.zoom(oldPxPerSec * 0.8);
+	};
+	const centerToPlayhead = () => {
+		const zoom = getZoomLevel();
+		if (zoom === 1) return; // Return early if the waveform is fully zoomed out
+		// Number of seconds that are visible
+		const visibleTime = ws.getDuration() * zoom;
+		ws.setScrollTime(ws.getCurrentTime() - visibleTime / 2);
+	};
+	const resetZoom = () => {
+		ws.zoom(1);
+		ws.setScrollTime(0);
+	};
 </script>
 
 {#if audioEngine.isLoading}
-	<div class="flex w-full translate-y-28 justify-center">
+	<div class="flex h-full w-full items-center justify-center">
 		<Spinner />
 	</div>
 {/if}
-<div
-	id="waveform"
-	bind:this={container}
-	class="relative h-full transition-opacity duration-500 select-none"
-	class:opacity-0={audioEngine.isLoading}
->
-	{#if children}
-		{@render children()}
-	{/if}
+<div class="flex h-full w-full flex-row items-center">
+	<div class="flex w-16 flex-col items-center justify-center gap-2 pb-4">
+		<Tooltip.Root>
+			<Tooltip.Trigger>
+				<Button variant="outline" size="icon" onclick={zoomIn}><ZoomIn /></Button>
+			</Tooltip.Trigger>
+			<Tooltip.Content side="right">Zoom In</Tooltip.Content>
+		</Tooltip.Root>
+		<Tooltip.Root>
+			<Tooltip.Trigger>
+				<Button variant="outline" size="icon" onclick={zoomOut}><ZoomOut /></Button>
+			</Tooltip.Trigger>
+			<Tooltip.Content side="right">Zoom Out</Tooltip.Content>
+		</Tooltip.Root>
+		<Tooltip.Root>
+			<Tooltip.Trigger>
+				<Button variant="outline" size="icon" onclick={resetZoom}>
+					<ScanSearch />
+				</Button>
+			</Tooltip.Trigger>
+			<Tooltip.Content side="right">Reset Zoom</Tooltip.Content>
+		</Tooltip.Root>
+		<Tooltip.Root>
+			<Tooltip.Trigger>
+				<Button variant="outline" size="icon" onclick={centerToPlayhead}>
+					<UnfoldHorizontal />
+				</Button>
+			</Tooltip.Trigger>
+			<Tooltip.Content side="right">Center to Playhead</Tooltip.Content>
+		</Tooltip.Root>
+	</div>
+	<div
+		id="waveform"
+		bind:this={container}
+		class="relative h-full w-full transition-opacity duration-500 select-none"
+		class:opacity-0={audioEngine.isLoading}
+		style="width: {w - 16 * TW_SPACING}px;"
+	>
+		{#if children}
+			{@render children()}
+		{/if}
+	</div>
 </div>
 
 <style>
+	/* Horizontal scrollbar */
+	:global(#waveform ::part(scroll)) {
+		scrollbar-color: var(--color-muted-foreground) transparent;
+	}
+
+	/* Cursor tip */
 	:global(#waveform ::part(cursor):after) {
 		color: var(--color-destructive);
 		font-size: 18px;
@@ -171,6 +221,7 @@
 		translate: -6.3px -10px;
 	}
 
+	/* Loop region handles */
 	:global(#waveform ::part(region-handle-right)),
 	:global(#waveform ::part(region-handle-left)) {
 		cursor: col-resize;

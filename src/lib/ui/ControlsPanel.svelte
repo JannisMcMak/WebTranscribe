@@ -5,8 +5,6 @@
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import SquareIcon from '@lucide/svelte/icons/square';
 	import RepeatIcon from '@lucide/svelte/icons/repeat';
-	import ScanSearch from '@lucide/svelte/icons/scan-search';
-	import UnfoldHorizontal from '@lucide/svelte/icons/unfold-horizontal';
 	import TrashIcon from '@lucide/svelte/icons/trash';
 	import RotateCCW from '@lucide/svelte/icons/rotate-ccw';
 	import StepBack from '@lucide/svelte/icons/step-back';
@@ -47,7 +45,7 @@
 
 	const variant: ItemVariant = 'outline';
 	const size: ItemSize = 'sm';
-	const itemClass: ClassValue = 'p-2';
+	const itemClass: ClassValue = 'p-2 bg-card';
 </script>
 
 <Card.Root class={cn(className, 'h-auto w-full rounded-t-none bg-sidebar p-2')} bind:ref>
@@ -211,10 +209,10 @@
 			</Item.Content>
 		</Item.Root>
 
-		<!-- View -->
+		<!-- Interface -->
 		<Item.Root {size} {variant} class={cn(itemClass)}>
 			<Item.Content>
-				<Item.Title>View</Item.Title>
+				<Item.Title>Interface</Item.Title>
 				<Item.Description class="flex gap-2">
 					<Tooltip.Root>
 						<Tooltip.Trigger>
@@ -240,26 +238,6 @@
 							</DropdownMenu>
 						</Tooltip.Trigger>
 						<Tooltip.Content side="bottom">Toggle Overlays</Tooltip.Content>
-					</Tooltip.Root>
-					<Tooltip.Root>
-						<Tooltip.Trigger>
-							<Button
-								variant="outline"
-								size="icon"
-								onclick={() => waveformState.centerToPlayhead()}
-							>
-								<UnfoldHorizontal />
-							</Button>
-						</Tooltip.Trigger>
-						<Tooltip.Content side="bottom">Center to Playhead</Tooltip.Content>
-					</Tooltip.Root>
-					<Tooltip.Root>
-						<Tooltip.Trigger>
-							<Button variant="outline" size="icon" onclick={() => waveformState.resetZoom()}>
-								<ScanSearch />
-							</Button>
-						</Tooltip.Trigger>
-						<Tooltip.Content side="bottom">Reset Zoom</Tooltip.Content>
 					</Tooltip.Root>
 					<Tooltip.Root>
 						<Tooltip.Trigger>
