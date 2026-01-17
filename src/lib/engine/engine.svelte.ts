@@ -35,7 +35,7 @@ class AudioEngine {
 	private oscillatorNode: OscillatorNode | null = null;
 
 	private analyzer: AnalyserNode;
-	private analyzerData: Float32Array;
+	private analyzerData: Float32Array<ArrayBuffer>;
 
 	// ----- Audio state -----
 	/** Currently loaded audio file. */

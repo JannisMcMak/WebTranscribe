@@ -18,7 +18,6 @@
 	}
 </script>
 
-<!-- svelte-ignore state_referenced_locally -->
 <script lang="ts">
 	import { ToggleGroup as ToggleGroupPrimitive } from 'bits-ui';
 	import { cn } from '$lib/utils.js';
@@ -33,6 +32,7 @@
 		...restProps
 	}: ToggleGroupPrimitive.RootProps & ToggleVariants & { spacing?: number } = $props();
 
+	// svelte-ignore state_referenced_locally
 	setToggleGroupCtx({
 		variant,
 		size,

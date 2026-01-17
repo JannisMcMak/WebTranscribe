@@ -2,7 +2,6 @@
 	import { Button } from '$lib/components/ui/button';
 	import PlayIcon from '@lucide/svelte/icons/play';
 	import PauseIcon from '@lucide/svelte/icons/pause';
-	import { cn } from '$lib/utils';
 	import { twMerge } from 'tailwind-merge';
 
 	interface Props {
