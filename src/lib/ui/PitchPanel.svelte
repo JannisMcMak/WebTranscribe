@@ -47,6 +47,7 @@
 		return [1, 3, 6, 8, 10].includes(midi % 12);
 	}
 
+	// --- Grid drawing ---
 	function drawGrid() {
 		for (let midi = MIN_VISIBLE_NOTE; midi <= MAX_VISIBLE_NOTE; midi++) {
 			const y = h - ((midi - MIN_VISIBLE_NOTE) / VISIBLE_RANGE) * h;
@@ -67,9 +68,16 @@
 				ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
 				ctx.fillRect(0, y, w, NOTE_HEIGHT);
 			}
+
+			// fill hovered
+			if (midi === currentHoveredMidi) {
+				ctx.fillStyle = '#0000001C';
+				ctx.fillRect(0, y, w, NOTE_HEIGHT);
+			}
 		}
 	}
 
+	// --- Main render loop ---
 	$effect(() => {
 		if (!canvas) return;
 		if (!ctx) ctx = canvas.getContext('2d')!;
@@ -115,6 +123,7 @@
 		}
 	});
 
+	// --- Canvas interaction ---
 	function onWheel(e: WheelEvent) {
 		if (!canvas) return;
 		e.preventDefault();
@@ -133,44 +142,31 @@
 		}
 	}
 
+	// --- Piano roll ---
+	function midiToFreq(midi: number) {
+		return (440 / 32) * 2 ** ((midi - 9) / 12);
+	}
 	let pianoRollPressed = $state(false);
-	let currentHoveredMidi = $state(-1);
-	$inspect(pianoRollPressed, currentHoveredMidi);
+	let currentHoveredMidi = $state(0);
+	$effect(() => {
+		if (pianoRollPressed && currentHoveredMidi > 0) {
+			audioEngine.playNote(midiToFreq(currentHoveredMidi));
+		} else {
+			audioEngine.stopTone();
+		}
+	});
 </script>
 
 <div onwheel={onWheel} class="relative flex rounded-xl bg-card">
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<!-- TODO played tone vs. hovered tone is slightly off + make this more maintainable -->
 	<div
 		bind:this={pianoRoll}
 		class="relative h-full w-16 overflow-hidden rounded-l-xl bg-white select-none"
-		onmousedown={(e) => {
-			pianoRollPressed = true;
-			const offsetY = e.clientY - pianoRoll.getBoundingClientRect().top;
-			const midi = MIN_VISIBLE_NOTE + Math.round((h - offsetY) / NOTE_HEIGHT);
-			const freq = (440 / 32) * 2 ** ((midi - 9) / 12);
-			audioEngine.playNote(freq);
-			currentHoveredMidi = midi;
-		}}
-		onmouseup={() => {
-			audioEngine.stopTone();
-			pianoRollPressed = false;
-			currentHoveredMidi = -1;
-		}}
-		onmousemove={(e) => {
-			if (!pianoRollPressed) return;
-			const offsetY = e.clientY - pianoRoll.getBoundingClientRect().top;
-			const midi = MIN_VISIBLE_NOTE + Math.round((h - offsetY) / NOTE_HEIGHT);
-			if (midi !== currentHoveredMidi) {
-				const freq = (440 / 32) * 2 ** ((midi - 9) / 12);
-				audioEngine.playNote(freq);
-				currentHoveredMidi = midi;
-			}
-		}}
+		onmousedown={() => (pianoRollPressed = true)}
+		onmouseup={() => (pianoRollPressed = false)}
 		onmouseleave={() => {
-			audioEngine.stopTone();
 			pianoRollPressed = false;
-			currentHoveredMidi = -1;
+			currentHoveredMidi = 0;
 		}}
 	>
 		{#each Array(Math.ceil(VISIBLE_RANGE)) as _, i}
@@ -184,6 +180,7 @@
 				class:white={!isBlack}
 				class:hover:opacity-50={isBlack}
 				class:hover:brightness-90={!isBlack}
+				onmouseenter={() => (currentHoveredMidi = midi)}
 				style="
 					top: {h - (midi - MIN_VISIBLE_NOTE) * NOTE_HEIGHT}px;
 					height: {NOTE_HEIGHT}px;
