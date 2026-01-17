@@ -35,6 +35,7 @@
 
 	// Canvas dimensions / sizing
 	let { w, h }: { w: number; h: number } = $props();
+	const width = $derived(w - 16 * TW_SPACING); // Space on the left for waveform view control buttons (= size of the piano keys)
 	const NOTE_HEIGHT = $derived(h / VISIBLE_RANGE);
 
 	// References
@@ -60,19 +61,19 @@
 				: getComputedStyle(document.documentElement).getPropertyValue('--muted');
 			ctx.beginPath();
 			ctx.moveTo(0, y);
-			ctx.lineTo(w, y);
+			ctx.lineTo(width, y);
 			ctx.stroke();
 
 			// fill black keys
 			if (isMidiKeyBlack(midi)) {
 				ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
-				ctx.fillRect(0, y, w, NOTE_HEIGHT);
+				ctx.fillRect(0, y, width, NOTE_HEIGHT);
 			}
 
 			// fill hovered
 			if (midi === currentHoveredMidi) {
 				ctx.fillStyle = '#0000001C';
-				ctx.fillRect(0, y, w, NOTE_HEIGHT);
+				ctx.fillRect(0, y, width, NOTE_HEIGHT);
 			}
 		}
 	}
@@ -85,7 +86,7 @@
 
 		const numFrames = analysisState.pitchesPerFrame.length;
 
-		ctx.clearRect(0, 0, w, h);
+		ctx.clearRect(0, 0, width, h);
 		drawGrid();
 		ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
 
@@ -110,13 +111,13 @@
 
 				// horizontal position
 				const time = i * frameDuration - startTime;
-				const x = (time / visibleDuration) * w;
+				const x = (time / visibleDuration) * width;
 
 				// vertical position (piano roll: high notes on top)
 				const y = h - ((midi - MIN_VISIBLE_NOTE) / VISIBLE_RANGE) * h;
 
 				// draw a small rectangle per frame
-				const frameWidth = (frameDuration / visibleDuration) * w;
+				const frameWidth = (frameDuration / visibleDuration) * width;
 
 				ctx.fillRect(x, y - 1, frameWidth, NOTE_HEIGHT);
 			});
@@ -199,8 +200,7 @@
 		{/each}
 	</div>
 
-	<canvas bind:this={canvas} width={w - TW_SPACING * 16} height={h} class="flex-1 rounded-r-xl">
-	</canvas>
+	<canvas bind:this={canvas} {width} height={h} class="flex-1 rounded-r-xl"> </canvas>
 </div>
 
 <style>

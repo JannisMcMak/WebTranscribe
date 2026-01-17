@@ -114,7 +114,7 @@
 							h={(layout[0] / 100) * workingAreaHeight - TW_SPACING * 6}
 						>
 							{#if showBeatsOverlay}
-								<BeatsOverlay />
+								<BeatsOverlay w={clientWidth - 2 * 12 * TW_SPACING} />
 							{/if}
 						</Waveform>
 					</Resizable.Pane>
