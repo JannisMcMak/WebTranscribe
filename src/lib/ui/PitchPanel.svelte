@@ -136,9 +136,15 @@
 			if (newZoom === verticalZoom) return;
 			verticalZoom = newZoom;
 		} else {
-			// SCROLL → VERTICAL PAN
-			const panSpeed = -0.002;
-			verticalCenter = Math.min(1, Math.max(0, verticalCenter + e.deltaY * panSpeed));
+			// SCROLL
+			if (Math.abs(e.deltaY) >= Math.abs(e.deltaX)) {
+				// VERTICAL PAN
+				const panSpeed = -0.002;
+				verticalCenter = Math.min(1, Math.max(0, verticalCenter + e.deltaY * panSpeed));
+			} else {
+				// HORIZONTAL PAN
+				waveformState.handleScroll(e);
+			}
 		}
 	}
 

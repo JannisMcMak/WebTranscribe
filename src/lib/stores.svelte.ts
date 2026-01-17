@@ -19,6 +19,5 @@ export const waveformState = $state({
 	zoom: 1,
 	/** Scroll position in seconds (i.e., what time is at the start of the waveform). */
 	scrollPosition: 0,
-	resetZoom: <() => void>(() => {}),
-	centerToPlayhead: <() => void>(() => {})
+	handleScroll: <(e: WheelEvent) => void>(() => {})
 });

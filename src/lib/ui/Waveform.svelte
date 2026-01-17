@@ -84,6 +84,13 @@
 			waveformState.scrollPosition =
 				(ws.getScroll() / ws.getWrapper().scrollWidth) * audioEngine.bufferDuration;
 		});
+		// Add scroll handler
+		waveformState.handleScroll = (e: WheelEvent) => {
+			if (!ws || Math.abs(e.deltaY) >= Math.abs(e.deltaX)) return;
+			const delta = e.deltaX;
+			const scrollPos = ws.getScroll();
+			ws.setScroll(scrollPos + delta);
+		};
 
 		// --- Regions ---
 
