@@ -61,9 +61,17 @@
 			ctx.fillText(label.toString(), relX * width + 1, 8);
 		});
 	});
+
+	function onWheel(e: WheelEvent) {
+		if (!canvas) return;
+		e.preventDefault();
+		if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) {
+			waveformState.handleScroll(e);
+		}
+	}
 </script>
 
-<div class="flex rounded-xl">
+<div onwheel={onWheel} class="flex rounded-xl">
 	<div class="flex w-16 items-center justify-center">
 		<Popover.Root>
 			<Popover.Trigger class={buttonVariants({ size: 'icon', variant: 'outline' })}>
