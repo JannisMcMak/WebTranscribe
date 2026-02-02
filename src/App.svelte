@@ -16,7 +16,8 @@
 	import Footer from '$lib/ui/Footer.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import Upload from '@lucide/svelte/icons/upload';
-	import Sparkles from '@lucide/svelte/icons/sparkles';
+	import Activity from '@lucide/svelte/icons/activity';
+	import Music2 from '@lucide/svelte/icons/music-2';
 	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 	import VolumeMeter from '$lib/ui/VolumeMeter.svelte';
 	import { Spinner } from '$lib/components/ui/spinner';
@@ -135,7 +136,7 @@
 									<Spinner />
 								{:else}
 									<Button onclick={doBeatsAnalysis}>
-										<Sparkles />
+										<Activity />
 										Analyze Beats
 									</Button>
 								{/if}
@@ -156,7 +157,7 @@
 									<Spinner />
 								{:else}
 									<Button onclick={doPitchAnalysis}>
-										<Sparkles />
+										<Music2 />
 										Estimate Pitches
 									</Button>
 								{/if}
