@@ -9,7 +9,9 @@ export const analysisState = $state({
 	pitchOffsets: <Int32Array>new Int32Array([]),
 
 	beatsLoading: false,
-	beats: <Float32Array>new Float32Array([])
+	beats: <Float32Array>new Float32Array([]),
+	firstBeatIndex: 0,
+	beatsPerBar: 4
 });
 
 export const waveformState = $state({

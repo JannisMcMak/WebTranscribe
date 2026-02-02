@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import Waveform from '$lib/ui/Waveform.svelte';
 	import PitchPanel from '$lib/ui/PitchPanel.svelte';
-	import BeatsOverlay from '$lib/ui/BeatsOverlay.svelte';
+	import BeatsOverlay from '$lib/ui/BeatsPanel.svelte';
 	import ControlsPanel from '$lib/ui/ControlsPanel.svelte';
 	import { analysisState } from '$lib/stores.svelte';
 	import createAnalysisWorker from '$lib/workers';
@@ -45,13 +45,6 @@
 
 	const loadAudio = async (b: Blob) => {
 		await audioEngine.loadAudio(b);
-
-		// Do analysis
-		analysisState.beatsLoading = true;
-		audioWorker?.post({
-			type: 'beat',
-			buffer: audioEngine.audioData
-		});
 	};
 	const doPitchAnalysis = () => {
 		analysisState.pitchesLoading = true;
@@ -60,11 +53,19 @@
 			buffer: audioEngine.audioData
 		});
 	};
+	const doBeatsAnalysis = () => {
+		analysisState.beatsLoading = true;
+		audioWorker?.post({
+			type: 'beat',
+			buffer: audioEngine.audioData
+		});
+	};
 
-	let layout: number[] = $state([0.5, 0.5]);
+	let layout: number[] = $state([]);
+	let beatsPane: Resizable.Pane | null = $state(null);
 
 	let showVolumeMeter = $state(true);
-	let showBeatsOverlay = $state(false);
+	let showBeatsOverlay = $state(true);
 	let showPitchOverlay = $state(true);
 
 	let controlsPanel = $state<HTMLDivElement | null>(null);
@@ -108,24 +109,44 @@
 					direction="vertical"
 					class="px-12 py-6"
 				>
-					<Resizable.Pane minSize={15}>
+					<Resizable.Pane minSize={20} order={1}>
 						<Waveform
 							w={clientWidth - 2 * 12 * TW_SPACING}
 							h={(layout[0] / 100) * workingAreaHeight - TW_SPACING * 6}
-						>
-							{#if showBeatsOverlay}
-								<BeatsOverlay w={clientWidth - 2 * 12 * TW_SPACING} />
-							{/if}
-						</Waveform>
+						></Waveform>
 					</Resizable.Pane>
 
-					{#if showPitchOverlay}
-						<Resizable.Handle class="mx-auto w-3/4!" withHandle />
+					{#if showBeatsOverlay}
+						<Resizable.Handle class="bg-accent" withHandle />
+						<Resizable.Pane
+							defaultSize={10}
+							minSize={10}
+							maxSize={20}
+							order={2}
+							bind:this={beatsPane}
+						>
+							<Card.Root class="flex h-full w-full items-center justify-center py-0 shadow-none">
+								{#if !!analysisState.beats.length}
+									<BeatsOverlay
+										w={clientWidth - 2 * 16 * TW_SPACING}
+										h={(beatsPane.getSize() / 100) * workingAreaHeight - TW_SPACING * 6}
+									/>
+								{:else if analysisState.beatsLoading}
+									<Spinner />
+								{:else}
+									<Button onclick={doBeatsAnalysis}>
+										<Sparkles />
+										Analyze Beats
+									</Button>
+								{/if}
+							</Card.Root>
+						</Resizable.Pane>
 					{/if}
 
 					{#if showPitchOverlay}
-						<Resizable.Pane defaultSize={70} minSize={15}>
-							<Card.Root class="flex h-full w-full items-center justify-center">
+						<Resizable.Handle class="bg-accent" withHandle />
+						<Resizable.Pane defaultSize={50} minSize={15} order={3}>
+							<Card.Root class="flex h-full w-full items-center justify-center shadow-none">
 								{#if !!analysisState.pitches.length}
 									<PitchPanel
 										w={clientWidth - 2 * 12 * TW_SPACING}

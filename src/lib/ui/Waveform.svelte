@@ -19,9 +19,8 @@
 	interface Props {
 		w: number;
 		h: number;
-		children?: Snippet;
 	}
-	let { w, h, children }: Props = $props();
+	let { w, h }: Props = $props();
 
 	let container: HTMLDivElement;
 	let ws: WaveSurfer;
@@ -206,11 +205,7 @@
 		class="relative h-full w-full transition-opacity duration-500 select-none"
 		class:opacity-0={audioEngine.isLoading}
 		style="width: {w - 16 * TW_SPACING}px;"
-	>
-		{#if children}
-			{@render children()}
-		{/if}
-	</div>
+	></div>
 </div>
 
 <style>
