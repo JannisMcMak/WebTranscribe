@@ -106,8 +106,9 @@
 	let currentAudioName = $state('');
 	let sanitizedAudioName = $derived(currentAudioName.toLowerCase().replaceAll(' ', '-'));
 
-	let layout: number[] = $state([]);
+	let waveformPane: Resizable.Pane | null = $state(null);
 	let beatsPane: Resizable.Pane | null = $state(null);
+	let pitchPane: Resizable.Pane | null = $state(null);
 
 	let showVolumeMeter = $state(true);
 	let showBeatsOverlay = $state(true);
@@ -151,17 +152,11 @@
 						<VolumeMeter h={workingAreaHeight - 2 * TW_SPACING * 6} />
 					</div>
 				{/if}
-				<Resizable.PaneGroup
-					onLayoutChange={(l) => {
-						layout = l;
-					}}
-					direction="vertical"
-					class="px-12 py-6"
-				>
-					<Resizable.Pane minSize={20} order={1}>
+				<Resizable.PaneGroup direction="vertical" class="px-12 py-6">
+					<Resizable.Pane minSize={20} order={1} bind:this={waveformPane}>
 						<Waveform
 							w={clientWidth - 2 * 12 * TW_SPACING}
-							h={(layout[0] / 100) * workingAreaHeight - TW_SPACING * 6}
+							h={(waveformPane?.getSize() / 100) * workingAreaHeight - TW_SPACING * 6}
 						></Waveform>
 					</Resizable.Pane>
 
@@ -194,12 +189,12 @@
 
 					{#if showPitchOverlay}
 						<Resizable.Handle class="bg-accent" withHandle />
-						<Resizable.Pane defaultSize={50} minSize={15} order={3}>
+						<Resizable.Pane defaultSize={50} minSize={15} order={3} bind:this={pitchPane}>
 							<Card.Root class="flex h-full w-full items-center justify-center shadow-none">
 								{#if !!analysisState.pitch.values.length}
 									<PitchPanel
 										w={clientWidth - 2 * 12 * TW_SPACING}
-										h={(layout[1] / 100) * workingAreaHeight - TW_SPACING * 6}
+										h={(pitchPane?.getSize() / 100) * workingAreaHeight - TW_SPACING * 6}
 									/>
 								{:else if analysisState.pitch.loading}
 									<Spinner />
