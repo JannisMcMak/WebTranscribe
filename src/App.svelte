@@ -22,22 +22,60 @@
 	import VolumeMeter from '$lib/ui/VolumeMeter.svelte';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import { TW_SPACING } from '$lib/utils';
+	import { openDB } from 'idb';
 
 	let audioWorker: ReturnType<typeof createAnalysisWorker> | null = null;
+
+	const ANALYSIS_STORE = 'analysis';
+	async function getDB() {
+		return await openDB(sanitizedAudioName, 1, {
+			upgrade(db) {
+				db.createObjectStore(ANALYSIS_STORE);
+			}
+		});
+	}
+	async function persistAnalysisData<T extends 'pitch' | 'beat'>(
+		analysisType: T,
+		data: (typeof analysisState)[T]
+	) {
+		if (!audioEngine.blob || !currentAudioName) return;
+		const db = await getDB();
+		const existingData = (await db.get(ANALYSIS_STORE, analysisType)) || {};
+		await db.put(ANALYSIS_STORE, { ...existingData, ...data }, analysisType);
+	}
+	async function getAnalysisData<T extends 'pitch' | 'beat'>(
+		analysisType: T
+	): Promise<(typeof analysisState)[T]> {
+		const currentData = analysisState[analysisType];
+		if (!audioEngine.blob || !currentAudioName) return currentData;
+		const db = await getDB();
+		const existingData = await db.get(ANALYSIS_STORE, analysisType);
+		if (!existingData) return currentData;
+		console.log('Found persisted analysis data for', analysisType);
+		return existingData;
+	}
 
 	onMount(async () => {
 		audioWorker = createAnalysisWorker();
 		audioWorker.onMessage((msg) => {
 			switch (msg.type) {
 				case 'pitch':
-					analysisState.pitches = msg.pitches;
-					analysisState.pitchesPerFrame = msg.pitchesPerFrame;
-					analysisState.pitchOffsets = msg.offsets;
-					analysisState.pitchesLoading = false;
+					analysisState.pitch = {
+						values: msg.pitches,
+						offsets: msg.offsets,
+						perFrame: msg.pitchesPerFrame,
+						loading: false
+					};
+					persistAnalysisData('pitch', $state.snapshot(analysisState.pitch));
 					break;
 				case 'beat':
-					analysisState.beats = msg.data;
-					analysisState.beatsLoading = false;
+					analysisState.beat = {
+						values: msg.data,
+						firstBeatIndex: analysisState.beat.firstBeatIndex,
+						beatsPerBar: analysisState.beat.beatsPerBar,
+						loading: false
+					};
+					persistAnalysisData('beat', $state.snapshot(analysisState.beat));
 					break;
 			}
 		});
@@ -46,21 +84,27 @@
 
 	const loadAudio = async (b: Blob) => {
 		await audioEngine.loadAudio(b);
+		// Try to load analysis data from local storage
+		analysisState.beat = await getAnalysisData('beat');
+		analysisState.pitch = await getAnalysisData('pitch');
 	};
 	const doPitchAnalysis = () => {
-		analysisState.pitchesLoading = true;
+		analysisState.pitch.loading = true;
 		audioWorker?.post({
 			type: 'pitch',
 			buffer: audioEngine.audioData
 		});
 	};
 	const doBeatsAnalysis = () => {
-		analysisState.beatsLoading = true;
+		analysisState.beat.loading = true;
 		audioWorker?.post({
 			type: 'beat',
 			buffer: audioEngine.audioData
 		});
 	};
+
+	let currentAudioName = $state('');
+	let sanitizedAudioName = $derived(currentAudioName.toLowerCase().replaceAll(' ', '-'));
 
 	let layout: number[] = $state([]);
 	let beatsPane: Resizable.Pane | null = $state(null);
@@ -80,6 +124,10 @@
 	const footerHeight = $derived(footer?.clientHeight || 0);
 	const workingAreaHeight = $derived(clientHeight - controlPanelHeight - footerHeight || 0);
 </script>
+
+<svelte:head>
+	<title>WebTranscribe {currentAudioName ? `| ${currentAudioName}` : ''}</title>
+</svelte:head>
 
 <ModeWatcher />
 <KeyboardShortcuts />
@@ -127,12 +175,12 @@
 							bind:this={beatsPane}
 						>
 							<Card.Root class="flex h-full w-full items-center justify-center py-0 shadow-none">
-								{#if !!analysisState.beats.length}
+								{#if !!analysisState.beat.values.length}
 									<BeatsOverlay
 										w={clientWidth - 2 * 16 * TW_SPACING}
-										h={(beatsPane.getSize() / 100) * workingAreaHeight - TW_SPACING * 6}
+										h={(beatsPane?.getSize() / 100) * workingAreaHeight - TW_SPACING * 6}
 									/>
-								{:else if analysisState.beatsLoading}
+								{:else if analysisState.beat.loading}
 									<Spinner />
 								{:else}
 									<Button onclick={doBeatsAnalysis}>
@@ -148,12 +196,12 @@
 						<Resizable.Handle class="bg-accent" withHandle />
 						<Resizable.Pane defaultSize={50} minSize={15} order={3}>
 							<Card.Root class="flex h-full w-full items-center justify-center shadow-none">
-								{#if !!analysisState.pitches.length}
+								{#if !!analysisState.pitch.values.length}
 									<PitchPanel
 										w={clientWidth - 2 * 12 * TW_SPACING}
 										h={(layout[1] / 100) * workingAreaHeight - TW_SPACING * 6}
 									/>
-								{:else if analysisState.pitchesLoading}
+								{:else if analysisState.pitch.loading}
 									<Spinner />
 								{:else}
 									<Button onclick={doPitchAnalysis}>
@@ -175,6 +223,7 @@
 						onchange={() => {
 							if (!fileInput?.files) return;
 							loadAudio(fileInput.files[0]);
+							currentAudioName = fileInput.files[0].name;
 						}}
 					/>
 					<Button onclick={() => fileInput?.click()}>
@@ -187,7 +236,10 @@
 						onclick={() => {
 							fetch('/sample.mp3')
 								.then((response) => response.blob())
-								.then(loadAudio);
+								.then((b) => {
+									loadAudio(b);
+									currentAudioName = 'Sample';
+								});
 						}}>Load Sample</Button
 					>
 				</div>

@@ -8,6 +8,8 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Input } from '$lib/components/ui/input';
 
+	let analysisData = $derived(analysisState.beat);
+
 	let { w, h }: { w: number; h: number } = $props();
 	const width = $derived(w - 16 * TW_SPACING); // Space on the left for waveform view control buttons
 	let canvas: HTMLCanvasElement;
@@ -15,7 +17,7 @@
 
 	const visibleDuration = $derived(waveformState.zoom * audioEngine.bufferDuration);
 	const visibleBeats = $derived(
-		analysisState.beats.filter(
+		analysisData.values.filter(
 			(n) => n > waveformState.scrollPosition && n < waveformState.scrollPosition + visibleDuration
 		)
 	);
@@ -29,11 +31,11 @@
 			const relSeconds = beat - waveformState.scrollPosition;
 			const relX = relSeconds / visibleDuration;
 
-			const globalIndex = analysisState.beats.indexOf(beat);
+			const globalIndex = analysisData.values.indexOf(beat);
 			const positionInBar =
-				(((globalIndex - analysisState.firstBeatIndex) % analysisState.beatsPerBar) +
-					analysisState.beatsPerBar) %
-				analysisState.beatsPerBar;
+				(((globalIndex - analysisData.firstBeatIndex) % analysisData.beatsPerBar) +
+					analysisData.beatsPerBar) %
+				analysisData.beatsPerBar;
 			const isFirstBeat = positionInBar === 0;
 
 			// Draw beat
@@ -54,8 +56,8 @@
 			ctx.fill();
 			ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--secondary');
 			const label = isFirstBeat
-				? Math.floor(globalIndex / analysisState.beatsPerBar) -
-					Math.floor(analysisState.firstBeatIndex / analysisState.beatsPerBar) +
+				? Math.floor(globalIndex / analysisData.beatsPerBar) -
+					Math.floor(analysisData.firstBeatIndex / analysisData.beatsPerBar) +
 					1
 				: positionInBar + 1;
 			ctx.fillText(label.toString(), relX * width + 1, 8);
@@ -89,9 +91,9 @@
 							<Input
 								type="number"
 								id="beatsPerMeasure"
-								value={analysisState.beatsPerBar}
+								value={analysisData.beatsPerBar}
 								oninput={(e) =>
-									(analysisState.beatsPerBar = Number((e.target as HTMLInputElement).value))}
+									(analysisState.beat.beatsPerBar = Number((e.target as HTMLInputElement).value))}
 								min={1}
 								class="h-8"
 							/>
@@ -101,9 +103,10 @@
 							<Input
 								type="number"
 								id="firstMeasure"
-								value={analysisState.firstBeatIndex + 1}
+								value={analysisData.firstBeatIndex + 1}
 								oninput={(e) =>
-									(analysisState.firstBeatIndex = Number((e.target as HTMLInputElement).value) - 1)}
+									(analysisState.beat.firstBeatIndex =
+										Number((e.target as HTMLInputElement).value) - 1)}
 								min={1}
 								class="h-8"
 							/>

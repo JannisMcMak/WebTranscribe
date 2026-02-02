@@ -3,9 +3,11 @@
 	import audioEngine from '$lib/engine/engine.svelte';
 	import { TW_SPACING } from '$lib/utils';
 
+	let analysisData = $derived(analysisState.pitch);
+
 	// Pitch data
 	const midiNotes = $derived(
-		analysisState.pitches.map((hz) => {
+		analysisData.values.map((hz) => {
 			if (!hz || !isFinite(hz)) return -1;
 			const midi = 69 + 12 * Math.log2(hz / 440);
 			if (midi < MIN_NOTE || midi > MAX_NOTE) return -1;
@@ -82,9 +84,9 @@
 	$effect(() => {
 		if (!canvas) return;
 		if (!ctx) ctx = canvas.getContext('2d')!;
-		if (!analysisState.pitches || analysisState.pitches.length === 0) return;
+		if (!analysisData.values || analysisData.values.length === 0) return;
 
-		const numFrames = analysisState.pitchesPerFrame.length;
+		const numFrames = analysisData.perFrame.length;
 
 		ctx.clearRect(0, 0, width, h);
 		drawGrid();
@@ -100,8 +102,8 @@
 		const endFrame = Math.min(numFrames, Math.ceil(endTime / frameDuration));
 
 		for (let i = startFrame; i < endFrame; i++) {
-			const pitchOffset = analysisState.pitchOffsets[i];
-			const numPitches = analysisState.pitchesPerFrame[i];
+			const pitchOffset = analysisData.offsets[i];
+			const numPitches = analysisData.perFrame[i];
 
 			const frameMidiNotes = midiNotes.slice(pitchOffset, pitchOffset + numPitches);
 
