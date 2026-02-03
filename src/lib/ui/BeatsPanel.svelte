@@ -73,7 +73,7 @@
 	}
 </script>
 
-<div onwheel={onWheel} class="flex rounded-xl">
+<div onwheel={onWheel} class="flex w-full rounded-xl">
 	<div class="flex w-16 items-center justify-center">
 		<Popover.Root>
 			<Popover.Trigger class={buttonVariants({ size: 'icon', variant: 'outline' })}>
