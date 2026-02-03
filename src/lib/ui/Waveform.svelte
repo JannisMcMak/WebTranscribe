@@ -4,7 +4,7 @@
 	import Region from 'wavesurfer.js/dist/plugins/regions.js';
 	import Hover from 'wavesurfer.js/dist/plugins/hover.js';
 	import Zoom from 'wavesurfer.js/dist/plugins/zoom.js';
-	import { onMount, onDestroy, type Snippet } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import audioEngine from '$lib/engine/engine.svelte';
 	import { waveformState } from '$lib/stores.svelte';
 	import { formatTime, TW_SPACING } from '$lib/utils';
